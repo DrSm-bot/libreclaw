@@ -188,6 +188,10 @@ export type DiscordAccountConfig = {
   proxy?: string;
   /** Allow bot-authored messages to trigger replies (default: false). */
   allowBots?: boolean;
+  /** Include other bots' messages in guild channel history context (default: false).
+   * Useful for multi-agent setups where agents need to see each other's messages.
+   */
+  historyIncludeBots?: boolean;
   /**
    * Break-glass override: allow mutable identity matching (names/tags/slugs) in allowlists.
    * Default behavior is ID-only matching.

@@ -428,26 +428,35 @@ Example:
 
     If you only set `DISCORD_BOT_TOKEN` and do not create a `channels.discord` block, runtime fallback is `groupPolicy="allowlist"` (with a warning in logs), even if `channels.defaults.groupPolicy` is `open`.
 
-  </Tab>
+- `requireMention: true` means the bot only replies when mentioned (recommended for shared channels).
+- `agents.list[].groupChat.mentionPatterns` (or `messages.groupChat.mentionPatterns`) also count as mentions for guild messages.
+- Multi-agent override: set per-agent patterns on `agents.list[].groupChat.mentionPatterns`.
+- If `channels` is present, any channel not listed is denied by default.
+- Use a `"*"` channel entry to apply defaults across all channels; explicit channel entries override the wildcard.
+- Threads inherit parent channel config (allowlist, `requireMention`, skills, prompts, etc.) unless you add the thread channel id explicitly.
+- Owner hint: when a per-guild or per-channel `users` allowlist matches the sender, OpenClaw treats that sender as the owner in the system prompt. For a global owner across channels, set `commands.ownerAllowFrom`.
+- Bot-authored messages are ignored by default; set `channels.discord.allowBots=true` to allow them (own messages remain filtered).
+- Warning: If you allow replies to other bots (`channels.discord.allowBots=true`), prevent bot-to-bot reply loops with `requireMention`, `channels.discord.guilds.*.channels.<id>.users` allowlists, and/or clear guardrails in `AGENTS.md` and `SOUL.md`.
+- Multi-agent context: set `channels.discord.historyIncludeBots=true` to include other bots' messages in channel history context. This allows multiple agents sharing a channel to see each other's messages without triggering runs. Use this when you have multiple OpenClaw agents (or other bots) collaborating in the same channel.
 
-  <Tab title="Mentions and group DMs">
-    Guild messages are mention-gated by default.
+    <Tab title="Mentions and group DMs">
+      Guild messages are mention-gated by default.
 
-    Mention detection includes:
+      Mention detection includes:
 
-    - explicit bot mention
-    - configured mention patterns (`agents.list[].groupChat.mentionPatterns`, fallback `messages.groupChat.mentionPatterns`)
-    - implicit reply-to-bot behavior in supported cases
+      - explicit bot mention
+      - configured mention patterns (`agents.list[].groupChat.mentionPatterns`, fallback `messages.groupChat.mentionPatterns`)
+      - implicit reply-to-bot behavior in supported cases
 
-    `requireMention` is configured per guild/channel (`channels.discord.guilds...`).
+      `requireMention` is configured per guild/channel (`channels.discord.guilds...`).
 
-    Group DMs:
+      Group DMs:
 
-    - default: ignored (`dm.groupEnabled=false`)
-    - optional allowlist via `dm.groupChannels` (channel IDs or slugs)
+      - default: ignored (`dm.groupEnabled=false`)
+      - optional allowlist via `dm.groupChannels` (channel IDs or slugs)
 
-  </Tab>
-</Tabs>
+    </Tab>
+  </Tabs>
 
 ### Role-based agent routing
 
