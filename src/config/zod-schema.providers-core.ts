@@ -272,6 +272,7 @@ export const DiscordAccountSchema = z
     token: z.string().optional().register(sensitive),
     proxy: z.string().optional(),
     allowBots: z.boolean().optional(),
+    historyIncludeBots: z.boolean().optional(),
     groupPolicy: GroupPolicySchema.optional().default("allowlist"),
     historyLimit: z.number().int().min(0).optional(),
     dmHistoryLimit: z.number().int().min(0).optional(),
