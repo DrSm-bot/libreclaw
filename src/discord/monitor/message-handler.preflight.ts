@@ -148,6 +148,9 @@ export async function preflightDiscordMessage(
   });
 
   const isGuildMessage = Boolean(params.data.guild_id);
+  // Note: historyIncludeBots is account-level only (not per-channel) because
+  // the bot filter runs before channel config is resolved. This is intentional
+  // to keep the early-exit path simple.
   const historyIncludeBots = params.discordConfig?.historyIncludeBots ?? false;
 
   if (author.bot) {
