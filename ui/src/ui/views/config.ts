@@ -655,7 +655,8 @@ export function renderConfig(props: ConfigProps) {
               ${props.applying ? "Applying…" : "Apply"}
             </button>
             <button
-              class="btn btn--sm"
+              class="btn btn--sm danger"
+              title="Self-update the OpenClaw gateway (git/pnpm)."
               ?disabled=${!canUpdate}
               @click=${props.onUpdate}
             >
