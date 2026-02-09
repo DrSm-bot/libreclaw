@@ -1,6 +1,6 @@
 import type { AnyAgentTool } from "./tools/common.js";
 
-export type ToolProfileId = "minimal" | "coding" | "messaging" | "full";
+export type ToolProfileId = "none" | "minimal" | "coding" | "messaging" | "full";
 
 type ToolProfilePolicy = {
   allow?: string[];
@@ -63,6 +63,9 @@ export const TOOL_GROUPS: Record<string, string[]> = {
 const OWNER_ONLY_TOOL_NAMES = new Set<string>(["whatsapp_login"]);
 
 const TOOL_PROFILES: Record<ToolProfileId, ToolProfilePolicy> = {
+  none: {
+    deny: ["*"],
+  },
   minimal: {
     allow: ["session_status"],
   },
