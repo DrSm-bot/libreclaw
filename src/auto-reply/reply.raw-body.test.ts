@@ -90,4 +90,53 @@ describe("RawBody directive parsing", () => {
       expect(prompt).not.toContain("/think:high");
     });
   });
+
+  it("omits untrusted labels when messages.inbound.userContextLabels=off", async () => {
+    await withTempHome(async (home) => {
+      vi.mocked(runEmbeddedPiAgent).mockResolvedValue({
+        text: "ok",
+        meta: {},
+      } as unknown as { text: string; meta: Record<string, unknown> });
+      const groupMessageCtx = {
+        Body: "status please",
+        BodyForAgent: "status please",
+        RawBody: "status please",
+        InboundHistory: [{ sender: "Peter", body: "hello", timestamp: 1700000000000 }],
+        From: "+1222",
+        To: "+1222",
+        ChatType: "group",
+        GroupSubject: "Ops",
+        SenderName: "Jake McInteer",
+        SenderE164: "+6421807830",
+        CommandAuthorized: true,
+      };
+
+      await getReplyFromConfig(
+        groupMessageCtx,
+        {},
+        {
+          agents: {
+            defaults: {
+              model: "anthropic/claude-opus-4-5",
+              workspace: path.join(home, "openclaw"),
+            },
+          },
+          messages: {
+            inbound: {
+              userContextLabels: "off",
+            },
+          },
+          channels: { whatsapp: { allowFrom: ["*"] } },
+          session: { store: path.join(home, "sessions.json") },
+        },
+      );
+
+      expect(runEmbeddedPiAgent).toHaveBeenCalledOnce();
+      const prompt = vi.mocked(runEmbeddedPiAgent).mock.calls[0]?.[0]?.prompt ?? "";
+      expect(prompt).toContain("Chat history since last reply:");
+      expect(prompt).not.toContain("untrusted");
+      expect(prompt).toContain('"sender": "Peter"');
+      expect(prompt).toContain('"body": "hello"');
+    });
+  });
 });
