@@ -25,6 +25,8 @@ export type InboundDebounceByProvider = Record<string, number>;
 export type InboundDebounceConfig = {
   debounceMs?: number;
   byChannel?: InboundDebounceByProvider;
+  /** Control labels on inbound user context blocks ("on" keeps untrusted warnings). */
+  userContextLabels?: "on" | "off";
 };
 
 export type BroadcastStrategy = "parallel" | "sequential";
