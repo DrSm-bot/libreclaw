@@ -27,6 +27,8 @@ export type InboundDebounceConfig = {
   byChannel?: InboundDebounceByProvider;
   /** Control labels on inbound user context blocks ("on" keeps untrusted warnings). */
   userContextLabels?: "on" | "off";
+  /** Inject current message id into trusted inbound metadata (default: false). */
+  injectMessageId?: boolean;
 };
 
 export type BroadcastStrategy = "parallel" | "sequential";

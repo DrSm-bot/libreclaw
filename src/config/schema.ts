@@ -313,6 +313,7 @@ const FIELD_LABELS: Record<string, string> = {
   "messages.ackReactionScope": "Ack Reaction Scope",
   "messages.inbound.debounceMs": "Inbound Message Debounce (ms)",
   "messages.inbound.userContextLabels": "Inbound Context Labels",
+  "messages.inbound.injectMessageId": "Inject Message Id",
   "talk.apiKey": "Talk API Key",
   "channels.whatsapp": "WhatsApp",
   "channels.telegram": "Telegram",
@@ -828,32 +829,6 @@ function mergeObjectSchema(base: JsonSchemaObject, extension: JsonSchemaObject):
   }
   return merged;
 }
-
-export type ConfigSchemaResponse = {
-  schema: ConfigSchema;
-  uiHints: ConfigUiHints;
-  version: string;
-  generatedAt: string;
-};
-
-export type PluginUiMetadata = {
-  id: string;
-  name?: string;
-  description?: string;
-  configUiHints?: Record<
-    string,
-    Pick<ConfigUiHint, "label" | "help" | "tags" | "advanced" | "sensitive" | "placeholder">
-  >;
-  configSchema?: JsonSchemaNode;
-};
-
-export type ChannelUiMetadata = {
-  id: string;
-  label?: string;
-  description?: string;
-  configSchema?: JsonSchemaNode;
-  configUiHints?: Record<string, ConfigUiHint>;
-};
 
 function collectExtensionHintKeys(
   hints: ConfigUiHints,
