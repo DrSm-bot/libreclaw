@@ -312,6 +312,7 @@ const FIELD_LABELS: Record<string, string> = {
   "messages.ackReactionScope": "Ack Reaction Scope",
   "messages.inbound.debounceMs": "Inbound Message Debounce (ms)",
   "messages.inbound.userContextLabels": "Inbound Context Labels",
+  "messages.inbound.injectMessageId": "Inject Message Id",
   "talk.apiKey": "Talk API Key",
   "channels.whatsapp": "WhatsApp",
   "channels.telegram": "Telegram",

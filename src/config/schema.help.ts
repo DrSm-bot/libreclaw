@@ -336,6 +336,8 @@ export const FIELD_HELP: Record<string, string> = {
     "Debounce window (ms) for batching rapid inbound messages from the same sender (0 to disable).",
   "messages.inbound.userContextLabels":
     "Toggle labels for inbound user context blocks (on = include untrusted warnings, off = neutral labels).",
+  "messages.inbound.injectMessageId":
+    "Inject current message id into trusted inbound metadata (default: false).",
   "channels.telegram.dmPolicy":
     'Direct message access control ("pairing" recommended). "open" requires channels.telegram.allowFrom=["*"].',
   "channels.telegram.streamMode":

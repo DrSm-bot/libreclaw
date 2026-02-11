@@ -134,4 +134,50 @@ describe("RawBody directive parsing", () => {
       expect(prompt).toContain('"body": "hello"');
     });
   });
+
+  it("injects message id into trusted metadata when messages.inbound.injectMessageId=true", async () => {
+    await withTempHome(async (home) => {
+      vi.mocked(runEmbeddedPiAgent).mockResolvedValue({
+        text: "ok",
+        meta: {},
+      } as unknown as { text: string; meta: Record<string, unknown> });
+      const groupMessageCtx = {
+        Body: "status please",
+        BodyForAgent: "status please",
+        RawBody: "status please",
+        MessageSid: "msg-123",
+        From: "+1222",
+        To: "+1222",
+        ChatType: "group",
+        GroupSubject: "Ops",
+        SenderName: "Jake McInteer",
+        SenderE164: "+6421807830",
+        CommandAuthorized: true,
+      };
+
+      await getReplyFromConfig(
+        groupMessageCtx,
+        {},
+        {
+          agents: {
+            defaults: {
+              model: "anthropic/claude-opus-4-5",
+              workspace: path.join(home, "openclaw"),
+            },
+          },
+          messages: {
+            inbound: {
+              injectMessageId: true,
+            },
+          },
+          channels: { whatsapp: { allowFrom: ["*"] } },
+          session: { store: path.join(home, "sessions.json") },
+        },
+      );
+
+      expect(runEmbeddedPiAgent).toHaveBeenCalledOnce();
+      const extra = vi.mocked(runEmbeddedPiAgent).mock.calls[0]?.[0]?.extraSystemPrompt ?? "";
+      expect(extra).toContain('"message_id": "msg-123"');
+    });
+  });
 });
