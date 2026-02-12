@@ -386,7 +386,15 @@ function truncateValue(value: unknown, maxLen = 40): string {
 export function renderConfig(props: ConfigProps) {
   const validity = props.valid == null ? "unknown" : props.valid ? "valid" : "invalid";
   const analysis = analyzeConfigSchema(props.schema);
-  const formUnsafe = analysis.schema ? analysis.unsupportedPaths.length > 0 : false;
+  const formUnsafe = analysis.schema
+    ? analysis.unsupportedPaths.some(
+        (p) =>
+          p === "<root>" ||
+          (props.activeSection
+            ? p === props.activeSection || p.startsWith(`${props.activeSection}.`)
+            : true),
+      )
+    : false;
 
   // Get available sections from schema
   const schemaProps = analysis.schema?.properties ?? {};
