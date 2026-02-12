@@ -198,4 +198,72 @@ describe("config view", () => {
     input.dispatchEvent(new Event("input", { bubbles: true }));
     expect(onSearchChange).toHaveBeenCalledWith("gateway");
   });
+
+  it("shows unsafe warning for channels section when unsupported paths include channels", () => {
+    const container = document.createElement("div");
+    render(
+      renderConfig({
+        ...baseProps(),
+        activeSection: "channels",
+        schema: {
+          type: "object",
+          properties: {
+            channels: {
+              type: "object",
+              additionalProperties: true,
+            },
+            messages: {
+              type: "object",
+              properties: {
+                inbound: {
+                  type: "object",
+                  properties: {},
+                },
+              },
+            },
+          },
+        },
+      }),
+      container,
+    );
+
+    expect(container.textContent).toContain(
+      "Form view can't safely edit some fields. Use Raw to avoid losing config entries.",
+    );
+  });
+
+  it("hides unsafe warning for messages section when only channels is unsupported", () => {
+    const container = document.createElement("div");
+    render(
+      renderConfig({
+        ...baseProps(),
+        activeSection: "messages",
+        schema: {
+          type: "object",
+          properties: {
+            channels: {
+              type: "object",
+              additionalProperties: true,
+            },
+            messages: {
+              type: "object",
+              properties: {
+                inbound: {
+                  type: "object",
+                  properties: {
+                    debounceMs: { type: "integer" },
+                  },
+                },
+              },
+            },
+          },
+        },
+      }),
+      container,
+    );
+
+    expect(container.textContent).not.toContain(
+      "Form view can't safely edit some fields. Use Raw to avoid losing config entries.",
+    );
+  });
 });
