@@ -1,4 +1,6 @@
+import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { runEmbeddedPiAgent } from "../agents/pi-embedded.js";
 import { createTempHomeHarness, makeReplyConfig } from "./reply.test-harness.js";
 
 const agentMocks = vi.hoisted(() => ({
@@ -83,6 +85,101 @@ describe("RawBody directive parsing", () => {
       expect(prompt).toContain('"body": "hello"');
       expect(prompt).toContain("status please");
       expect(prompt).not.toContain("/think:high");
+    });
+  });
+
+  it("omits untrusted labels when messages.inbound.userContextLabels=off", async () => {
+    await withTempHome(async (home) => {
+      vi.mocked(runEmbeddedPiAgent).mockResolvedValue({
+        text: "ok",
+        meta: {},
+      } as unknown as { text: string; meta: Record<string, unknown> });
+      const groupMessageCtx = {
+        Body: "status please",
+        BodyForAgent: "status please",
+        RawBody: "status please",
+        InboundHistory: [{ sender: "Peter", body: "hello", timestamp: 1700000000000 }],
+        From: "+1222",
+        To: "+1222",
+        ChatType: "group",
+        GroupSubject: "Ops",
+        SenderName: "Jake McInteer",
+        SenderE164: "+6421807830",
+        CommandAuthorized: true,
+      };
+
+      await getReplyFromConfig(
+        groupMessageCtx,
+        {},
+        {
+          agents: {
+            defaults: {
+              model: "anthropic/claude-opus-4-5",
+              workspace: path.join(home, "openclaw"),
+            },
+          },
+          messages: {
+            inbound: {
+              userContextLabels: "off",
+            },
+          },
+          channels: { whatsapp: { allowFrom: ["*"] } },
+          session: { store: path.join(home, "sessions.json") },
+        },
+      );
+
+      expect(runEmbeddedPiAgent).toHaveBeenCalledOnce();
+      const prompt = vi.mocked(runEmbeddedPiAgent).mock.calls[0]?.[0]?.prompt ?? "";
+      expect(prompt).toContain("Chat history since last reply:");
+      expect(prompt).not.toContain("untrusted");
+      expect(prompt).toContain('"sender": "Peter"');
+      expect(prompt).toContain('"body": "hello"');
+    });
+  });
+
+  it("injects message id into trusted metadata when messages.inbound.injectMessageId=true", async () => {
+    await withTempHome(async (home) => {
+      vi.mocked(runEmbeddedPiAgent).mockResolvedValue({
+        text: "ok",
+        meta: {},
+      } as unknown as { text: string; meta: Record<string, unknown> });
+      const groupMessageCtx = {
+        Body: "status please",
+        BodyForAgent: "status please",
+        RawBody: "status please",
+        MessageSid: "msg-123",
+        From: "+1222",
+        To: "+1222",
+        ChatType: "group",
+        GroupSubject: "Ops",
+        SenderName: "Jake McInteer",
+        SenderE164: "+6421807830",
+        CommandAuthorized: true,
+      };
+
+      await getReplyFromConfig(
+        groupMessageCtx,
+        {},
+        {
+          agents: {
+            defaults: {
+              model: "anthropic/claude-opus-4-5",
+              workspace: path.join(home, "openclaw"),
+            },
+          },
+          messages: {
+            inbound: {
+              injectMessageId: true,
+            },
+          },
+          channels: { whatsapp: { allowFrom: ["*"] } },
+          session: { store: path.join(home, "sessions.json") },
+        },
+      );
+
+      expect(runEmbeddedPiAgent).toHaveBeenCalledOnce();
+      const extra = vi.mocked(runEmbeddedPiAgent).mock.calls[0]?.[0]?.extraSystemPrompt ?? "";
+      expect(extra).toContain('"message_id": "msg-123"');
     });
   });
 });

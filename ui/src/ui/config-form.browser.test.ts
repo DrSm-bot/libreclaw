@@ -256,4 +256,152 @@ describe("config form renderer", () => {
     const analysis = analyzeConfigSchema(schema);
     expect(analysis.unsupportedPaths).toContain("extra");
   });
+
+  it("renders system prompt customization editor and patches fields", () => {
+    const onPatch = vi.fn();
+    const container = document.createElement("div");
+    const schema = {
+      type: "object",
+      properties: {
+        agents: {
+          type: "object",
+          properties: {
+            defaults: {
+              type: "object",
+              properties: {
+                systemPrompt: {
+                  type: "object",
+                  properties: {
+                    mode: { type: "string", enum: ["default", "replace"] },
+                    prepend: { type: "string" },
+                    append: { type: "string" },
+                    removeSections: {
+                      type: "array",
+                      items: {
+                        type: "string",
+                        enum: ["tooling", "safety", "runtime"],
+                      },
+                    },
+                    allowUnsafeReplace: { type: "boolean" },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    };
+    const analysis = analyzeConfigSchema(schema);
+    render(
+      renderConfigForm({
+        schema: analysis.schema,
+        uiHints: {},
+        unsupportedPaths: analysis.unsupportedPaths,
+        value: {
+          agents: {
+            defaults: {
+              systemPrompt: {
+                mode: "default",
+                allowUnsafeReplace: false,
+                removeSections: ["tooling"],
+                prepend: "alpha",
+                append: "omega",
+              },
+            },
+          },
+        },
+        onPatch,
+      }),
+      container,
+    );
+
+    const replaceButton = Array.from(
+      container.querySelectorAll<HTMLButtonElement>(".cfg-segmented__btn"),
+    ).find((btn) => btn.textContent?.trim() === "replace");
+    expect(replaceButton).toBeDefined();
+    replaceButton?.click();
+    expect(onPatch).toHaveBeenCalledWith(["agents", "defaults", "systemPrompt", "mode"], "replace");
+
+    const safetyCheck = Array.from(
+      container.querySelectorAll<HTMLInputElement>(".cfg-check-grid input"),
+    )[1];
+    expect(safetyCheck).toBeDefined();
+    safetyCheck.checked = true;
+    safetyCheck.dispatchEvent(new Event("change", { bubbles: true }));
+    expect(onPatch).toHaveBeenCalledWith(
+      ["agents", "defaults", "systemPrompt", "removeSections"],
+      ["tooling", "safety"],
+    );
+
+    const textareas = container.querySelectorAll<HTMLTextAreaElement>(".cfg-textarea--prompt");
+    expect(textareas.length).toBe(2);
+    textareas[0].value = "new pre";
+    textareas[0].dispatchEvent(new Event("input", { bubbles: true }));
+    expect(onPatch).toHaveBeenCalledWith(
+      ["agents", "defaults", "systemPrompt", "prepend"],
+      "new pre",
+    );
+  });
+
+  it("falls back to known section IDs when schema enum is missing", () => {
+    const onPatch = vi.fn();
+    const container = document.createElement("div");
+    const schema = {
+      type: "object",
+      properties: {
+        agents: {
+          type: "object",
+          properties: {
+            defaults: {
+              type: "object",
+              properties: {
+                systemPrompt: {
+                  type: "object",
+                  properties: {
+                    mode: { type: "string", enum: ["default", "replace"] },
+                    removeSections: {
+                      type: "array",
+                      items: { type: "string" },
+                    },
+                    allowUnsafeReplace: { type: "boolean" },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    };
+    const analysis = analyzeConfigSchema(schema);
+    render(
+      renderConfigForm({
+        schema: analysis.schema,
+        uiHints: {},
+        unsupportedPaths: analysis.unsupportedPaths,
+        value: { agents: { defaults: { systemPrompt: { removeSections: [] } } } },
+        onPatch,
+      }),
+      container,
+    );
+
+    expect(container.textContent).toContain("tooling");
+    expect(container.textContent).toContain("runtime");
+
+    const toolingLabel = Array.from(
+      container.querySelectorAll<HTMLElement>(".cfg-check-grid__label"),
+    ).find((entry) => entry.textContent?.trim() === "tooling");
+    expect(toolingLabel?.getAttribute("title")).toContain("Available tools");
+
+    const firstCheckbox = container.querySelector<HTMLInputElement>(".cfg-check-grid input");
+    expect(firstCheckbox).not.toBeNull();
+    if (!firstCheckbox) {
+      return;
+    }
+    firstCheckbox.checked = true;
+    firstCheckbox.dispatchEvent(new Event("change", { bubbles: true }));
+    expect(onPatch).toHaveBeenCalledWith(
+      ["agents", "defaults", "systemPrompt", "removeSections"],
+      ["tooling"],
+    );
+  });
 });

@@ -378,6 +378,8 @@ export const InboundDebounceSchema = z
   .object({
     debounceMs: z.number().int().nonnegative().optional(),
     byChannel: DebounceMsBySurfaceSchema,
+    userContextLabels: z.union([z.literal("on"), z.literal("off")]).optional(),
+    injectMessageId: z.boolean().optional(),
   })
   .strict()
   .optional();

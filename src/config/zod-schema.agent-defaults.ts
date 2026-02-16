@@ -12,6 +12,45 @@ import {
   HumanDelaySchema,
 } from "./zod-schema.core.js";
 
+// Keep this list in sync with src/agents/system-prompt.ts (SYSTEM_PROMPT_SECTION_IDS)
+const SYSTEM_PROMPT_SECTION_IDS = [
+  "tooling",
+  "tool_call_style",
+  "safety",
+  "openclaw_cli_quick_reference",
+  "skills",
+  "memory_recall",
+  "openclaw_self_update",
+  "model_aliases",
+  "workspace",
+  "documentation",
+  "sandbox",
+  "user_identity",
+  "current_date_time",
+  "workspace_files_injected",
+  "reply_tags",
+  "messaging",
+  "voice_tts",
+  "group_chat_context",
+  "subagent_context",
+  "reactions",
+  "reasoning_format",
+  "project_context",
+  "silent_replies",
+  "heartbeats",
+  "runtime",
+] as const;
+
+const SystemPromptSectionIdSchema = z
+  .string()
+  .refine(
+    (value): value is (typeof SYSTEM_PROMPT_SECTION_IDS)[number] =>
+      (SYSTEM_PROMPT_SECTION_IDS as readonly string[]).includes(value),
+    {
+      message: `Invalid system prompt section ID. Valid IDs: ${SYSTEM_PROMPT_SECTION_IDS.join(", ")}`,
+    },
+  );
+
 export const AgentDefaultsSchema = z
   .object({
     model: z
@@ -44,6 +83,16 @@ export const AgentDefaultsSchema = z
       .optional(),
     workspace: z.string().optional(),
     repoRoot: z.string().optional(),
+    systemPrompt: z
+      .object({
+        mode: z.union([z.literal("default"), z.literal("replace")]).optional(),
+        prepend: z.string().optional(),
+        append: z.string().optional(),
+        removeSections: z.array(SystemPromptSectionIdSchema).optional(),
+        allowUnsafeReplace: z.boolean().optional(),
+      })
+      .strict()
+      .optional(),
     skipBootstrap: z.boolean().optional(),
     bootstrapMaxChars: z.number().int().positive().optional(),
     bootstrapTotalMaxChars: z.number().int().positive().optional(),

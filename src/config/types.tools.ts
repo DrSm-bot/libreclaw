@@ -136,7 +136,7 @@ export type MediaToolsConfig = {
   video?: MediaUnderstandingConfig;
 };
 
-export type ToolProfileId = "minimal" | "coding" | "messaging" | "full";
+export type ToolProfileId = "none" | "minimal" | "coding" | "messaging" | "full";
 
 export type SessionsToolsVisibility = "self" | "tree" | "agent" | "all";
 

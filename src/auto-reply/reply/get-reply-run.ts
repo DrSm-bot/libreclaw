@@ -186,6 +186,7 @@ export async function runPreparedReply(
   const groupSystemPrompt = sessionCtx.GroupSystemPrompt?.trim() ?? "";
   const inboundMetaPrompt = buildInboundMetaSystemPrompt(
     isNewSession ? sessionCtx : { ...sessionCtx, ThreadStarterBody: undefined },
+    { injectMessageId: cfg.messages?.inbound?.injectMessageId },
   );
   const extraSystemPrompt = [inboundMetaPrompt, groupChatContext, groupIntro, groupSystemPrompt]
     .filter(Boolean)
@@ -209,14 +210,10 @@ export async function runPreparedReply(
     ((baseBodyTrimmedRaw.length === 0 && rawBodyTrimmed.length > 0) || isBareNewOrReset);
   const baseBodyFinal = isBareSessionReset ? BARE_SESSION_RESET_PROMPT : baseBody;
   const inboundUserContext = buildInboundUserContextPrefix(
-    isNewSession
-      ? {
-          ...sessionCtx,
-          ...(sessionCtx.ThreadHistoryBody?.trim()
-            ? { InboundHistory: undefined, ThreadStarterBody: undefined }
-            : {}),
-        }
-      : { ...sessionCtx, ThreadStarterBody: undefined },
+    isNewSession ? sessionCtx : { ...sessionCtx, ThreadStarterBody: undefined },
+    {
+      labels: cfg.messages?.inbound?.userContextLabels,
+    },
   );
   const baseBodyForPrompt = isBareSessionReset
     ? baseBodyFinal

@@ -473,6 +473,12 @@ export async function compactEmbeddedPiSessionDirect(
       moduleUrl: import.meta.url,
     });
     const ttsHint = params.config ? buildTtsSystemPromptHint(params.config) : undefined;
+    const systemPromptConfig = params.config?.agents?.defaults?.systemPrompt;
+    if (systemPromptConfig?.mode === "replace") {
+      log.warn(
+        "system prompt customization: mode=replace active for this compaction run (generated baseline may be bypassed)",
+      );
+    }
     const appendPrompt = buildEmbeddedSystemPrompt({
       workspaceDir: effectiveWorkspace,
       defaultThinkLevel: params.thinkLevel,
@@ -498,6 +504,7 @@ export async function compactEmbeddedPiSessionDirect(
       userTimeFormat,
       contextFiles,
       memoryCitationsMode: params.config?.memory?.citations,
+      systemPromptConfig,
     });
     const systemPromptOverride = createSystemPromptOverride(appendPrompt);
 

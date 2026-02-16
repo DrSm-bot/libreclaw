@@ -386,7 +386,15 @@ function truncateValue(value: unknown, maxLen = 40): string {
 export function renderConfig(props: ConfigProps) {
   const validity = props.valid == null ? "unknown" : props.valid ? "valid" : "invalid";
   const analysis = analyzeConfigSchema(props.schema);
-  const formUnsafe = analysis.schema ? analysis.unsupportedPaths.length > 0 : false;
+  const formUnsafe = analysis.schema
+    ? analysis.unsupportedPaths.some(
+        (p) =>
+          p === "<root>" ||
+          (props.activeSection
+            ? p === props.activeSection || p.startsWith(`${props.activeSection}.`)
+            : true),
+      )
+    : false;
 
   // Get available sections from schema
   const schemaProps = analysis.schema?.properties ?? {};
@@ -579,7 +587,8 @@ export function renderConfig(props: ConfigProps) {
               ${props.applying ? "Applying…" : "Apply"}
             </button>
             <button
-              class="btn btn--sm"
+              class="btn btn--sm danger"
+              title="Self-update the OpenClaw gateway (git/pnpm)."
               ?disabled=${!canUpdate}
               @click=${props.onUpdate}
             >

@@ -11,6 +11,62 @@ import {
 
 const META_KEYS = new Set(["title", "description", "default", "nullable"]);
 
+const SYSTEM_PROMPT_SECTION_IDS_FALLBACK = [
+  "tooling",
+  "tool_call_style",
+  "safety",
+  "openclaw_cli_quick_reference",
+  "skills",
+  "memory_recall",
+  "openclaw_self_update",
+  "model_aliases",
+  "workspace",
+  "documentation",
+  "sandbox",
+  "user_identity",
+  "current_date_time",
+  "workspace_files_injected",
+  "reply_tags",
+  "messaging",
+  "voice_tts",
+  "group_chat_context",
+  "subagent_context",
+  "reactions",
+  "reasoning_format",
+  "project_context",
+  "silent_replies",
+  "heartbeats",
+  "runtime",
+] as const;
+
+const SYSTEM_PROMPT_SECTION_DESCRIPTIONS_FALLBACK: Record<string, string> = {
+  tooling: "Available tools and their usage constraints.",
+  tool_call_style: "Guidelines for when and how to narrate tool calls.",
+  safety: "Safety constraints and behavior boundaries.",
+  openclaw_cli_quick_reference: "Valid OpenClaw CLI commands and usage notes.",
+  skills: "Rules for selecting and loading skills.",
+  memory_recall: "Memory search policy and citation behavior.",
+  openclaw_self_update: "Restrictions for self-update and config apply operations.",
+  model_aliases: "Model alias mappings when configured.",
+  workspace: "Workspace path and file operation scope.",
+  documentation: "Pointers to local and remote documentation.",
+  sandbox: "Sandbox runtime constraints.",
+  user_identity: "Context about the user identity and naming.",
+  current_date_time: "Current timezone and date-time context.",
+  workspace_files_injected: "Injected workspace files included in prompt context.",
+  reply_tags: "Reply-tag behavior for native quote/reply surfaces.",
+  messaging: "Messaging routing and tool usage rules.",
+  voice_tts: "Voice and text-to-speech behavior.",
+  group_chat_context: "Group chat metadata and participation guidance.",
+  subagent_context: "Sub-agent orchestration context and guardrails.",
+  reactions: "Reaction handling guidance.",
+  reasoning_format: "Reasoning/verbosity format requirements.",
+  project_context: "Injected project context and loaded files.",
+  silent_replies: "When to respond with NO_REPLY.",
+  heartbeats: "Heartbeat poll acknowledgment behavior.",
+  runtime: "Runtime environment details.",
+};
+
 function isAnySchema(schema: JsonSchema): boolean {
   const keys = Object.keys(schema ?? {}).filter((key) => !META_KEYS.has(key));
   return keys.length === 0;
@@ -237,6 +293,9 @@ export function renderNode(params: {
 
   // Object type - collapsible section
   if (type === "object") {
+    if (key === "agents.defaults.systemPrompt") {
+      return renderSystemPromptEditor(params);
+    }
     return renderObject(params);
   }
 
@@ -460,6 +519,184 @@ function renderSelect(params: {
         )}
       </select>
     </div>
+  `;
+}
+
+function renderSystemPromptEditor(params: {
+  schema: JsonSchema;
+  value: unknown;
+  path: Array<string | number>;
+  hints: ConfigUiHints;
+  disabled: boolean;
+  onPatch: (path: Array<string | number>, value: unknown) => void;
+}): TemplateResult {
+  const { schema, value, path, hints, disabled, onPatch } = params;
+  const hint = hintForPath(path, hints);
+  const label = hint?.label ?? schema.title ?? "System Prompt";
+  const help = hint?.help ?? schema.description;
+
+  const obj =
+    value && typeof value === "object" && !Array.isArray(value)
+      ? (value as Record<string, unknown>)
+      : {};
+
+  const modePath = [...path, "mode"];
+  const unsafePath = [...path, "allowUnsafeReplace"];
+  const removeSectionsPath = [...path, "removeSections"];
+  const prependPath = [...path, "prepend"];
+  const appendPath = [...path, "append"];
+
+  const modeNode = schema.properties?.mode;
+  const removeSectionsNode = schema.properties?.removeSections;
+  const removeItemsNode =
+    removeSectionsNode && !Array.isArray(removeSectionsNode.items)
+      ? removeSectionsNode.items
+      : undefined;
+  const removeOptions = Array.isArray(removeItemsNode?.enum)
+    ? removeItemsNode.enum.filter((item): item is string => typeof item === "string")
+    : [...SYSTEM_PROMPT_SECTION_IDS_FALLBACK];
+
+  const mode = obj.mode === "replace" ? "replace" : "default";
+  const allowUnsafeReplace = obj.allowUnsafeReplace === true;
+  const removeSections = Array.isArray(obj.removeSections)
+    ? obj.removeSections.filter((entry): entry is string => typeof entry === "string")
+    : [];
+  const prepend = typeof obj.prepend === "string" ? obj.prepend : "";
+  const append = typeof obj.append === "string" ? obj.append : "";
+
+  const modeHelp =
+    hintForPath(modePath, hints)?.help ??
+    modeNode?.description ??
+    'Choose "replace" to ignore generated prompt sections.';
+
+  const replaceBlocked = mode === "replace" && !allowUnsafeReplace;
+
+  return html`
+    <section class="cfg-system-prompt">
+      <div class="cfg-system-prompt__head">
+        <div class="cfg-system-prompt__title">${label}</div>
+        ${help ? html`<div class="cfg-system-prompt__help">${help}</div>` : nothing}
+      </div>
+
+      <div class="cfg-field">
+        <label class="cfg-field__label">Prompt Mode</label>
+        <div class="cfg-field__help">${modeHelp}</div>
+        <div class="cfg-segmented">
+          <button
+            type="button"
+            class="cfg-segmented__btn ${mode === "default" ? "active" : ""}"
+            ?disabled=${disabled}
+            @click=${() => onPatch(modePath, "default")}
+          >
+            default
+          </button>
+          <button
+            type="button"
+            class="cfg-segmented__btn ${mode === "replace" ? "active" : ""}"
+            ?disabled=${disabled}
+            @click=${() => onPatch(modePath, "replace")}
+          >
+            replace
+          </button>
+        </div>
+      </div>
+
+      <label class="cfg-toggle-row ${disabled ? "disabled" : ""} cfg-toggle-row--danger">
+        <div class="cfg-toggle-row__content">
+          <span class="cfg-toggle-row__label">Allow Unsafe Replace</span>
+          <span class="cfg-toggle-row__help"
+            >Required for replace mode to take effect. Disabling keeps built-in generated prompt sections active.</span
+          >
+        </div>
+        <div class="cfg-toggle">
+          <input
+            type="checkbox"
+            .checked=${allowUnsafeReplace}
+            ?disabled=${disabled || mode !== "replace"}
+            @change=${(e: Event) => onPatch(unsafePath, (e.target as HTMLInputElement).checked)}
+          />
+          <span class="cfg-toggle__track"></span>
+        </div>
+      </label>
+
+      ${
+        mode === "replace"
+          ? html`
+              <div class="callout danger cfg-system-prompt__warning">
+                Replace mode is active. Generated prompt sections are ignored
+                ${replaceBlocked ? " until you enable Allow Unsafe Replace." : "."}
+              </div>
+            `
+          : nothing
+      }
+
+      <div class="cfg-field">
+        <label class="cfg-field__label">Removed Sections</label>
+        <div class="cfg-field__help">
+          Remove generated sections by stable section ID.
+        </div>
+        ${
+          removeOptions.length === 0
+            ? html`
+                <div class="muted">No section IDs available from schema.</div>
+              `
+            : html`
+                <div class="cfg-check-grid">
+                  ${removeOptions.map((sectionId) => {
+                    const selected = removeSections.includes(sectionId);
+                    const description = SYSTEM_PROMPT_SECTION_DESCRIPTIONS_FALLBACK[sectionId];
+                    return html`
+                      <label
+                        class="cfg-check-grid__item ${selected ? "active" : ""}"
+                        title=${description ?? ""}
+                      >
+                        <input
+                          type="checkbox"
+                          .checked=${selected}
+                          ?disabled=${disabled}
+                          @change=${(e: Event) => {
+                            const checked = (e.target as HTMLInputElement).checked;
+                            const next = checked
+                              ? [...removeSections, sectionId]
+                              : removeSections.filter((entry) => entry !== sectionId);
+                            onPatch(removeSectionsPath, next);
+                          }}
+                        />
+                        <span class="cfg-check-grid__label" title=${description ?? ""}>${sectionId}</span>
+                      </label>
+                    `;
+                  })}
+                </div>
+              `
+        }
+      </div>
+
+      <div class="cfg-field">
+        <label class="cfg-field__label">Prompt Prepend</label>
+        <div class="cfg-field__help">Text injected before generated prompt sections.</div>
+        <textarea
+          class="cfg-textarea cfg-textarea--prompt"
+          rows="8"
+          placeholder="Optional text prepended to the generated system prompt"
+          .value=${prepend}
+          ?disabled=${disabled}
+          @input=${(e: Event) => onPatch(prependPath, (e.target as HTMLTextAreaElement).value)}
+        ></textarea>
+      </div>
+
+      <div class="cfg-field">
+        <label class="cfg-field__label">Prompt Append</label>
+        <div class="cfg-field__help">Text injected after generated prompt sections.</div>
+        <textarea
+          class="cfg-textarea cfg-textarea--prompt"
+          rows="8"
+          placeholder="Optional text appended to the generated system prompt"
+          .value=${append}
+          ?disabled=${disabled}
+          @input=${(e: Event) => onPatch(appendPath, (e.target as HTMLTextAreaElement).value)}
+        ></textarea>
+      </div>
+    </section>
   `;
 }
 
