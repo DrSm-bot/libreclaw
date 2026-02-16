@@ -24,6 +24,67 @@ describe("buildAgentSystemPrompt", () => {
     expect(prompt).not.toContain("Owner numbers:");
   });
 
+  it("composes prepend + generated + append in default mode", () => {
+    const prompt = buildAgentSystemPrompt({
+      workspaceDir: "/tmp/openclaw",
+      systemPromptConfig: {
+        mode: "default",
+        prepend: "PREPEND_BLOCK",
+        append: "APPEND_BLOCK",
+      },
+    });
+
+    const prependIndex = prompt.indexOf("PREPEND_BLOCK");
+    const toolingIndex = prompt.indexOf("## Tooling");
+    const appendIndex = prompt.indexOf("APPEND_BLOCK");
+
+    expect(prependIndex).toBeGreaterThanOrEqual(0);
+    expect(toolingIndex).toBeGreaterThanOrEqual(0);
+    expect(appendIndex).toBeGreaterThanOrEqual(0);
+    expect(prependIndex).toBeLessThan(toolingIndex);
+    expect(toolingIndex).toBeLessThan(appendIndex);
+  });
+
+  it("removes configured sections from generated prompt", () => {
+    const prompt = buildAgentSystemPrompt({
+      workspaceDir: "/tmp/openclaw",
+      systemPromptConfig: {
+        mode: "default",
+        removeSections: ["documentation", "model_aliases"],
+      },
+      docsPath: "/tmp/openclaw/docs",
+      modelAliasLines: ["- Demo: provider/model"],
+    });
+
+    expect(prompt).not.toContain("## Documentation");
+    expect(prompt).not.toContain("## Model Aliases");
+    expect(prompt).toContain("## Tooling");
+    expect(prompt).toContain("## Runtime");
+  });
+
+  it("uses replace mode only when unsafe replace is allowed", () => {
+    const replaced = buildAgentSystemPrompt({
+      workspaceDir: "/tmp/openclaw",
+      systemPromptConfig: {
+        mode: "replace",
+        allowUnsafeReplace: true,
+        prepend: "REPLACE_ONLY",
+      },
+    });
+    expect(replaced).toBe("REPLACE_ONLY");
+
+    const fallback = buildAgentSystemPrompt({
+      workspaceDir: "/tmp/openclaw",
+      systemPromptConfig: {
+        mode: "replace",
+        allowUnsafeReplace: false,
+        prepend: "IGNORED",
+      },
+    });
+    expect(fallback).toContain("## Tooling");
+    expect(fallback).toContain("## Runtime");
+  });
+
   it("omits extended sections in minimal prompt mode", () => {
     const prompt = buildAgentSystemPrompt({
       workspaceDir: "/tmp/openclaw",

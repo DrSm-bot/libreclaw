@@ -14,6 +14,7 @@ export {
   collectGatewayHttpSessionKeyOverrideFindings,
   collectHooksHardeningFindings,
   collectMinimalProfileOverrideFindings,
+  collectSystemPromptCustomizationFindings,
   collectModelHygieneFindings,
   collectNodeDenyCommandPatternFindings,
   collectSandboxDangerousConfigFindings,

@@ -1,4 +1,5 @@
 import type { ReasoningLevel, ThinkLevel } from "../auto-reply/thinking.js";
+import type { SystemPromptConfig } from "../config/types.agent-defaults.js";
 import type { MemoryCitationsMode } from "../config/types.memory.js";
 import type { ResolvedTimeFormat } from "./date-time.js";
 import type { EmbeddedContextFile } from "./pi-embedded-helpers.js";
@@ -13,6 +14,130 @@ import { sanitizeForPromptLiteral } from "./sanitize-for-prompt.js";
  * - "none": Just basic identity line, no sections
  */
 export type PromptMode = "full" | "minimal" | "none";
+
+/**
+ * Stable section IDs for configurable prompt composition (e.g. removeSections).
+ * Keep IDs backward-compatible once released.
+ */
+export const SYSTEM_PROMPT_SECTION_IDS = [
+  "tooling",
+  "tool_call_style",
+  "safety",
+  "openclaw_cli_quick_reference",
+  "skills",
+  "memory_recall",
+  "openclaw_self_update",
+  "model_aliases",
+  "workspace",
+  "documentation",
+  "sandbox",
+  "user_identity",
+  "current_date_time",
+  "workspace_files_injected",
+  "reply_tags",
+  "messaging",
+  "voice_tts",
+  "group_chat_context",
+  "subagent_context",
+  "reactions",
+  "reasoning_format",
+  "project_context",
+  "silent_replies",
+  "heartbeats",
+  "runtime",
+] as const;
+
+export type SystemPromptSectionId = (typeof SYSTEM_PROMPT_SECTION_IDS)[number];
+
+const SECTION_HEADER_BY_ID: Record<SystemPromptSectionId, string[]> = {
+  tooling: ["## Tooling"],
+  tool_call_style: ["## Tool Call Style"],
+  safety: ["## Safety"],
+  openclaw_cli_quick_reference: ["## OpenClaw CLI Quick Reference"],
+  skills: ["## Skills (mandatory)"],
+  memory_recall: ["## Memory Recall"],
+  openclaw_self_update: ["## OpenClaw Self-Update"],
+  model_aliases: ["## Model Aliases"],
+  workspace: ["## Workspace"],
+  documentation: ["## Documentation"],
+  sandbox: ["## Sandbox"],
+  user_identity: ["## User Identity"],
+  current_date_time: ["## Current Date & Time"],
+  workspace_files_injected: ["## Workspace Files (injected)"],
+  reply_tags: ["## Reply Tags"],
+  messaging: ["## Messaging"],
+  voice_tts: ["## Voice (TTS)"],
+  group_chat_context: ["## Group Chat Context"],
+  subagent_context: ["## Subagent Context"],
+  reactions: ["## Reactions"],
+  reasoning_format: ["## Reasoning Format"],
+  project_context: ["# Project Context"],
+  silent_replies: ["## Silent Replies"],
+  heartbeats: ["## Heartbeats"],
+  runtime: ["## Runtime"],
+};
+
+function trimOptional(value?: string): string | undefined {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : undefined;
+}
+
+function removeSectionsFromPromptText(params: {
+  prompt: string;
+  removeSections?: string[];
+}): string {
+  const { prompt } = params;
+  const remove = (params.removeSections ?? []).filter(Boolean);
+  if (remove.length === 0) {
+    return prompt;
+  }
+  const lines = prompt.split("\n");
+  const headerToRemove = new Set<string>();
+  for (const id of remove) {
+    const headers = SECTION_HEADER_BY_ID[id as SystemPromptSectionId];
+    if (!headers) {
+      continue;
+    }
+    for (const header of headers) {
+      headerToRemove.add(header);
+    }
+  }
+  if (headerToRemove.size === 0) {
+    return prompt;
+  }
+
+  const getHeaderLevel = (line: string): number | null => {
+    const match = /^(#+)\s+/.exec(line);
+    return match ? match[1].length : null;
+  };
+
+  const kept: string[] = [];
+  let skipping = false;
+  let skipHeaderLevel: number | null = null;
+  for (const line of lines) {
+    const currentHeaderLevel = getHeaderLevel(line);
+    if (currentHeaderLevel !== null) {
+      if (!skipping && headerToRemove.has(line)) {
+        skipping = true;
+        skipHeaderLevel = currentHeaderLevel;
+        continue;
+      }
+      if (
+        skipping &&
+        skipHeaderLevel !== null &&
+        currentHeaderLevel <= skipHeaderLevel &&
+        !headerToRemove.has(line)
+      ) {
+        skipping = false;
+        skipHeaderLevel = null;
+      }
+    }
+    if (!skipping) {
+      kept.push(line);
+    }
+  }
+  return kept.join("\n");
+}
 
 function buildSkillsSection(params: {
   skillsPrompt?: string;
@@ -220,6 +345,7 @@ export function buildAgentSystemPrompt(params: {
     channel: string;
   };
   memoryCitationsMode?: MemoryCitationsMode;
+  systemPromptConfig?: SystemPromptConfig;
 }) {
   const coreToolSummaries: Record<string, string> = {
     read: "Read file contents",
@@ -395,6 +521,16 @@ export function buildAgentSystemPrompt(params: {
   // For "none" mode, return just the basic identity line
   if (promptMode === "none") {
     return "You are a personal assistant running inside OpenClaw.";
+  }
+
+  const systemPromptConfig = params.systemPromptConfig;
+  const prependPrompt = trimOptional(systemPromptConfig?.prepend);
+  const appendPrompt = trimOptional(systemPromptConfig?.append);
+  if (systemPromptConfig?.mode === "replace" && systemPromptConfig.allowUnsafeReplace === true) {
+    const customOnly = [prependPrompt, appendPrompt].filter(Boolean).join("\n\n");
+    if (customOnly) {
+      return customOnly;
+    }
   }
 
   const lines = [
@@ -634,7 +770,11 @@ export function buildAgentSystemPrompt(params: {
     `Reasoning: ${reasoningLevel} (hidden unless on/stream). Toggle /reasoning; /status shows Reasoning when enabled.`,
   );
 
-  return lines.filter(Boolean).join("\n");
+  const generatedPrompt = removeSectionsFromPromptText({
+    prompt: lines.filter(Boolean).join("\n"),
+    removeSections: systemPromptConfig?.removeSections,
+  });
+  return [prependPrompt, generatedPrompt, appendPrompt].filter(Boolean).join("\n\n");
 }
 
 export function buildRuntimeLine(
