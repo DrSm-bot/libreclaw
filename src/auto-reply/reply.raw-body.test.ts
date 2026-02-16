@@ -1,5 +1,6 @@
+import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { OpenClawConfig } from "../config/config.js";
+import { runEmbeddedPiAgent } from "../agents/pi-embedded.js";
 import { createTempHomeHarness, makeReplyConfig } from "./reply.test-harness.js";
 
 const agentMocks = vi.hoisted(() => ({
@@ -36,8 +37,8 @@ const { withTempHome } = createTempHomeHarness({ prefix: "openclaw-rawbody-" });
 describe("RawBody directive parsing", () => {
   beforeEach(() => {
     vi.stubEnv("OPENCLAW_TEST_FAST", "1");
-    agentMocks.runEmbeddedPiAgent.mockClear();
-    agentMocks.loadModelCatalog.mockClear();
+    agentMocks.runEmbeddedPiAgent.mockReset();
+    agentMocks.loadModelCatalog.mockReset();
     agentMocks.loadModelCatalog.mockResolvedValue([
       { id: "claude-opus-4-5", name: "Opus 4.5", provider: "anthropic" },
     ]);
@@ -71,11 +72,7 @@ describe("RawBody directive parsing", () => {
         CommandAuthorized: true,
       };
 
-      const res = await getReplyFromConfig(
-        groupMessageCtx,
-        {},
-        makeReplyConfig(home) as OpenClawConfig,
-      );
+      const res = await getReplyFromConfig(groupMessageCtx, {}, makeReplyConfig(home));
 
       const text = Array.isArray(res) ? res[0]?.text : res?.text;
       expect(text).toBe("ok");
