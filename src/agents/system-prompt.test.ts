@@ -62,4 +62,24 @@ describe("system prompt customization composition", () => {
     expect(fallback).toContain("## Tooling");
     expect(fallback).toContain("## Runtime");
   });
+
+  it("removes level-1 sections without being interrupted by nested headings", () => {
+    const prompt = buildAgentSystemPrompt({
+      workspaceDir: "/tmp/openclaw",
+      contextFiles: [
+        {
+          path: "/tmp/openclaw/NOTE.md",
+          content: "## Nested Header\nThis should also be removed with project context.",
+        },
+      ],
+      systemPromptConfig: {
+        mode: "default",
+        removeSections: ["project_context"],
+      },
+    });
+
+    expect(prompt).not.toContain("# Project Context");
+    expect(prompt).not.toContain("## /tmp/openclaw/NOTE.md");
+    expect(prompt).not.toContain("## Nested Header");
+  });
 });
