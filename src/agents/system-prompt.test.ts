@@ -81,5 +81,8 @@ describe("system prompt customization composition", () => {
     expect(prompt).not.toContain("# Project Context");
     expect(prompt).not.toContain("## /tmp/openclaw/NOTE.md");
     expect(prompt).not.toContain("## Nested Header");
+    expect(prompt).toContain("## Silent Replies");
+    expect(prompt).toContain("## Heartbeats");
+    expect(prompt).toContain("## Runtime");
   });
 });

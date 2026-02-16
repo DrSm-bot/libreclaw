@@ -93,6 +93,12 @@ function removeSectionsFromPromptText(params: {
   }
   const lines = prompt.split("\n");
   const headerToRemove = new Set<string>();
+  const allKnownHeaders = new Set<string>();
+  for (const headers of Object.values(SECTION_HEADER_BY_ID)) {
+    for (const header of headers) {
+      allKnownHeaders.add(header);
+    }
+  }
   for (const id of remove) {
     const headers = SECTION_HEADER_BY_ID[id as SystemPromptSectionId];
     if (!headers) {
@@ -114,22 +120,25 @@ function removeSectionsFromPromptText(params: {
   const kept: string[] = [];
   let skipping = false;
   let skipHeaderLevel: number | null = null;
+  let stopAtAnyNextKnownSectionHeader = false;
   for (const line of lines) {
     const currentHeaderLevel = getHeaderLevel(line);
     if (currentHeaderLevel !== null) {
       if (!skipping && headerToRemove.has(line)) {
         skipping = true;
         skipHeaderLevel = currentHeaderLevel;
+        stopAtAnyNextKnownSectionHeader = line === "# Project Context";
         continue;
       }
-      if (
-        skipping &&
-        skipHeaderLevel !== null &&
-        currentHeaderLevel <= skipHeaderLevel &&
-        !headerToRemove.has(line)
-      ) {
-        skipping = false;
-        skipHeaderLevel = null;
+      if (skipping && !headerToRemove.has(line)) {
+        const shouldStop = stopAtAnyNextKnownSectionHeader
+          ? allKnownHeaders.has(line)
+          : skipHeaderLevel !== null && currentHeaderLevel <= skipHeaderLevel;
+        if (shouldStop) {
+          skipping = false;
+          skipHeaderLevel = null;
+          stopAtAnyNextKnownSectionHeader = false;
+        }
       }
     }
     if (!skipping) {
