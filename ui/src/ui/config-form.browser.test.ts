@@ -449,4 +449,61 @@ describe("config form renderer", () => {
       "new pre",
     );
   });
+
+  it("falls back to known section IDs when schema enum is missing", () => {
+    const onPatch = vi.fn();
+    const container = document.createElement("div");
+    const schema = {
+      type: "object",
+      properties: {
+        agents: {
+          type: "object",
+          properties: {
+            defaults: {
+              type: "object",
+              properties: {
+                systemPrompt: {
+                  type: "object",
+                  properties: {
+                    mode: { type: "string", enum: ["default", "replace"] },
+                    removeSections: {
+                      type: "array",
+                      items: { type: "string" },
+                    },
+                    allowUnsafeReplace: { type: "boolean" },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    };
+    const analysis = analyzeConfigSchema(schema);
+    render(
+      renderConfigForm({
+        schema: analysis.schema,
+        uiHints: {},
+        unsupportedPaths: analysis.unsupportedPaths,
+        value: { agents: { defaults: { systemPrompt: { removeSections: [] } } } },
+        onPatch,
+      }),
+      container,
+    );
+
+    expect(container.textContent).toContain("tooling");
+    expect(container.textContent).toContain("runtime");
+
+    const firstCheckbox = container.querySelector<HTMLInputElement>(".cfg-check-grid input");
+    expect(firstCheckbox).not.toBeNull();
+    if (!firstCheckbox) {
+      return;
+    }
+    firstCheckbox.checked = true;
+    firstCheckbox.dispatchEvent(new Event("change", { bubbles: true }));
+    expect(onPatch).toHaveBeenCalledWith(
+      ["agents", "defaults", "systemPrompt", "removeSections"],
+      ["tooling"],
+    );
+  });
 });

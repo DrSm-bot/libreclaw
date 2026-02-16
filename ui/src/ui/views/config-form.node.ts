@@ -11,6 +11,34 @@ import {
 
 const META_KEYS = new Set(["title", "description", "default", "nullable", "tags", "x-tags"]);
 
+const SYSTEM_PROMPT_SECTION_IDS_FALLBACK = [
+  "tooling",
+  "tool_call_style",
+  "safety",
+  "openclaw_cli_quick_reference",
+  "skills",
+  "memory_recall",
+  "openclaw_self_update",
+  "model_aliases",
+  "workspace",
+  "documentation",
+  "sandbox",
+  "user_identity",
+  "current_date_time",
+  "workspace_files_injected",
+  "reply_tags",
+  "messaging",
+  "voice_tts",
+  "group_chat_context",
+  "subagent_context",
+  "reactions",
+  "reasoning_format",
+  "project_context",
+  "silent_replies",
+  "heartbeats",
+  "runtime",
+] as const;
+
 function isAnySchema(schema: JsonSchema): boolean {
   const keys = Object.keys(schema ?? {}).filter((key) => !META_KEYS.has(key));
   return keys.length === 0;
@@ -737,7 +765,7 @@ function renderSystemPromptEditor(params: {
       : undefined;
   const removeOptions = Array.isArray(removeItemsNode?.enum)
     ? removeItemsNode.enum.filter((item): item is string => typeof item === "string")
-    : [];
+    : [...SYSTEM_PROMPT_SECTION_IDS_FALLBACK];
 
   const mode = obj.mode === "replace" ? "replace" : "default";
   const allowUnsafeReplace = obj.allowUnsafeReplace === true;
