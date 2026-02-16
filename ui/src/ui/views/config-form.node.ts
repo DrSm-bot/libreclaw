@@ -39,6 +39,34 @@ const SYSTEM_PROMPT_SECTION_IDS_FALLBACK = [
   "runtime",
 ] as const;
 
+const SYSTEM_PROMPT_SECTION_DESCRIPTIONS_FALLBACK: Record<string, string> = {
+  tooling: "Available tools and their usage constraints.",
+  tool_call_style: "Guidelines for when and how to narrate tool calls.",
+  safety: "Safety constraints and behavior boundaries.",
+  openclaw_cli_quick_reference: "Valid OpenClaw CLI commands and usage notes.",
+  skills: "Rules for selecting and loading skills.",
+  memory_recall: "Memory search policy and citation behavior.",
+  openclaw_self_update: "Restrictions for self-update and config apply operations.",
+  model_aliases: "Model alias mappings when configured.",
+  workspace: "Workspace path and file operation scope.",
+  documentation: "Pointers to local and remote documentation.",
+  sandbox: "Sandbox runtime constraints.",
+  user_identity: "Context about the user identity and naming.",
+  current_date_time: "Current timezone and date-time context.",
+  workspace_files_injected: "Injected workspace files included in prompt context.",
+  reply_tags: "Reply-tag behavior for native quote/reply surfaces.",
+  messaging: "Messaging routing and tool usage rules.",
+  voice_tts: "Voice and text-to-speech behavior.",
+  group_chat_context: "Group chat metadata and participation guidance.",
+  subagent_context: "Sub-agent orchestration context and guardrails.",
+  reactions: "Reaction handling guidance.",
+  reasoning_format: "Reasoning/verbosity format requirements.",
+  project_context: "Injected project context and loaded files.",
+  silent_replies: "When to respond with NO_REPLY.",
+  heartbeats: "Heartbeat poll acknowledgment behavior.",
+  runtime: "Runtime environment details.",
+};
+
 function isAnySchema(schema: JsonSchema): boolean {
   const keys = Object.keys(schema ?? {}).filter((key) => !META_KEYS.has(key));
   return keys.length === 0;
@@ -616,8 +644,12 @@ function renderSystemPromptEditor(params: {
                 <div class="cfg-check-grid">
                   ${removeOptions.map((sectionId) => {
                     const selected = removeSections.includes(sectionId);
+                    const description = SYSTEM_PROMPT_SECTION_DESCRIPTIONS_FALLBACK[sectionId];
                     return html`
-                      <label class="cfg-check-grid__item ${selected ? "active" : ""}">
+                      <label
+                        class="cfg-check-grid__item ${selected ? "active" : ""}"
+                        title=${description ?? ""}
+                      >
                         <input
                           type="checkbox"
                           .checked=${selected}
@@ -630,7 +662,7 @@ function renderSystemPromptEditor(params: {
                             onPatch(removeSectionsPath, next);
                           }}
                         />
-                        <span class="cfg-check-grid__label">${sectionId}</span>
+                        <span class="cfg-check-grid__label" title=${description ?? ""}>${sectionId}</span>
                       </label>
                     `;
                   })}
