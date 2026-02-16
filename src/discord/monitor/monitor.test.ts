@@ -21,7 +21,12 @@ import {
   createAgentComponentButton,
   createAgentSelectMenu,
   createDiscordComponentButton,
+  createDiscordComponentChannelSelect,
+  createDiscordComponentMentionableSelect,
   createDiscordComponentModal,
+  createDiscordComponentRoleSelect,
+  createDiscordComponentStringSelect,
+  createDiscordComponentUserSelect,
 } from "./agent-components.js";
 import {
   resolveDiscordMemberAllowed,
@@ -260,6 +265,23 @@ describe("discord component interactions", () => {
     recordInboundSessionMock.mockReset().mockResolvedValue(undefined);
     readSessionUpdatedAtMock.mockReset().mockReturnValue(undefined);
     resolveStorePathMock.mockReset().mockReturnValue("/tmp/openclaw-sessions-test.json");
+  });
+
+  it("uses unique bootstrap customIds for discord component handler registration", () => {
+    const ctx = createComponentContext();
+    const customIds = [
+      createDiscordComponentButton(ctx).customId,
+      createDiscordComponentStringSelect(ctx).customId,
+      createDiscordComponentUserSelect(ctx).customId,
+      createDiscordComponentRoleSelect(ctx).customId,
+      createDiscordComponentMentionableSelect(ctx).customId,
+      createDiscordComponentChannelSelect(ctx).customId,
+    ];
+
+    expect(new Set(customIds).size).toBe(customIds.length);
+    for (const customId of customIds) {
+      expect(customId.startsWith("occomp:")).toBe(true);
+    }
   });
 
   it("routes button clicks with reply references", async () => {
