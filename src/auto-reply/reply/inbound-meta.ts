@@ -16,17 +16,16 @@ export function buildInboundMetaSystemPrompt(
 ): string {
   const chatType = normalizeChatType(ctx.ChatType);
   const isDirect = !chatType || chatType === "direct";
-  const messageId = safeTrim(ctx.MessageSid);
+  const messageId = safeTrim(ctx.MessageSidFull) ?? safeTrim(ctx.MessageSid);
   const messageIdFull = safeTrim(ctx.MessageSidFull);
   const replyToId = safeTrim(ctx.ReplyToId);
   const chatId = safeTrim(ctx.OriginatingTo);
 
   // Keep system metadata strictly free of attacker-controlled strings (sender names, group subjects, etc.).
   // Those belong in the user-role "untrusted context" blocks.
-  const messageId = safeTrim(ctx.MessageSidFull) ?? safeTrim(ctx.MessageSid);
   const payload = {
     schema: "openclaw.inbound_meta.v1",
-    message_id: messageId,
+    message_id: options?.injectMessageId ? messageId : undefined,
     message_id_full: messageIdFull && messageIdFull !== messageId ? messageIdFull : undefined,
     chat_id: chatId,
     reply_to_id: replyToId,
@@ -34,7 +33,6 @@ export function buildInboundMetaSystemPrompt(
     provider: safeTrim(ctx.Provider),
     surface: safeTrim(ctx.Surface),
     chat_type: chatType ?? (isDirect ? "direct" : undefined),
-    message_id: options?.injectMessageId ? messageId : undefined,
     flags: {
       is_group_chat: !isDirect ? true : undefined,
       was_mentioned: ctx.WasMentioned === true ? true : undefined,
