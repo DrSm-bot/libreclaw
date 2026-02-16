@@ -86,6 +86,14 @@ const FIELD_PLACEHOLDERS: Record<string, string> = {
   "agents.list[].identity.avatar": "avatars/openclaw.png",
 };
 
+const FIELD_ORDERS: Record<string, number> = {
+  "agents.defaults.systemPrompt.mode": 10,
+  "agents.defaults.systemPrompt.allowUnsafeReplace": 20,
+  "agents.defaults.systemPrompt.removeSections": 30,
+  "agents.defaults.systemPrompt.prepend": 40,
+  "agents.defaults.systemPrompt.append": 50,
+};
+
 /**
  * Non-sensitive field names that happen to match sensitive patterns.
  * These are explicitly excluded from redaction (plugin config) and
@@ -142,6 +150,10 @@ export function buildBaseHints(): ConfigUiHints {
   for (const [path, placeholder] of Object.entries(FIELD_PLACEHOLDERS)) {
     const current = hints[path];
     hints[path] = current ? { ...current, placeholder } : { placeholder };
+  }
+  for (const [path, order] of Object.entries(FIELD_ORDERS)) {
+    const current = hints[path];
+    hints[path] = current ? { ...current, order } : { order };
   }
   return hints;
 }
