@@ -898,6 +898,68 @@
   font-size: 12px;
 }
 
+.cfg-textarea--prompt {
+  min-height: 160px;
+}
+
+.cfg-system-prompt {
+  display: grid;
+  gap: 14px;
+}
+
+.cfg-system-prompt__head {
+  display: grid;
+  gap: 4px;
+}
+
+.cfg-system-prompt__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.cfg-system-prompt__help {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.cfg-system-prompt__warning {
+  margin: 0;
+}
+
+.cfg-check-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.cfg-check-grid__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  background: var(--bg-accent);
+  cursor: pointer;
+}
+
+.cfg-check-grid__item.active {
+  border-color: color-mix(in oklab, var(--accent) 45%, var(--border));
+  background: color-mix(in oklab, var(--accent-subtle) 50%, var(--bg-accent));
+}
+
+.cfg-check-grid__label {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text);
+}
+
+:root[data-theme="light"] .cfg-check-grid__item {
+  background: white;
+}
+
 /* Number Input */
 .cfg-number {
   display: inline-flex;
@@ -1052,6 +1114,10 @@
 .cfg-toggle-row.disabled {
   opacity: 0.55;
   cursor: not-allowed;
+}
+
+.cfg-toggle-row--danger {
+  border-color: color-mix(in oklab, var(--danger) 28%, var(--border));
 }
 
 :root[data-theme="light"] .cfg-toggle-row {
