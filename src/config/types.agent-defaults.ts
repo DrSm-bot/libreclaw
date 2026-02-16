@@ -121,6 +121,19 @@ export type CliBackendConfig = {
   };
 };
 
+export type SystemPromptConfig = {
+  /** Prompt composition mode: keep generated prompt (`default`) or replace it entirely (`replace`). */
+  mode?: "default" | "replace";
+  /** Text injected before generated prompt sections. */
+  prepend?: string;
+  /** Text injected after generated prompt sections. */
+  append?: string;
+  /** Stable system prompt section IDs to remove from the generated prompt. */
+  removeSections?: string[];
+  /** Explicitly allow full replacement mode (unsafe; may remove built-in safeguards). */
+  allowUnsafeReplace?: boolean;
+};
+
 export type AgentDefaultsConfig = {
   /** Primary model and fallbacks (provider/model). */
   model?: AgentModelListConfig;
@@ -132,6 +145,8 @@ export type AgentDefaultsConfig = {
   workspace?: string;
   /** Optional repository root for system prompt runtime line (overrides auto-detect). */
   repoRoot?: string;
+  /** Optional system prompt customization (compose or replace generated system prompt). */
+  systemPrompt?: SystemPromptConfig;
   /** Skip bootstrap (BOOTSTRAP.md creation, etc.) for pre-configured deployments. */
   skipBootstrap?: boolean;
   /** Max chars for injected bootstrap files before truncation (default: 20000). */

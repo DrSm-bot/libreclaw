@@ -44,6 +44,16 @@ export const AgentDefaultsSchema = z
       .optional(),
     workspace: z.string().optional(),
     repoRoot: z.string().optional(),
+    systemPrompt: z
+      .object({
+        mode: z.union([z.literal("default"), z.literal("replace")]).optional(),
+        prepend: z.string().optional(),
+        append: z.string().optional(),
+        removeSections: z.array(z.string().min(1)).optional(),
+        allowUnsafeReplace: z.boolean().optional(),
+      })
+      .strict()
+      .optional(),
     skipBootstrap: z.boolean().optional(),
     bootstrapMaxChars: z.number().int().positive().optional(),
     bootstrapTotalMaxChars: z.number().int().positive().optional(),

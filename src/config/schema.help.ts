@@ -148,6 +148,16 @@ export const FIELD_HELP: Record<string, string> = {
     "Max total characters across all injected workspace bootstrap files (default: 24000).",
   "agents.defaults.repoRoot":
     "Optional repository root shown in the system prompt runtime line (overrides auto-detect).",
+  "agents.defaults.systemPrompt":
+    "Customize generated system prompts (prepend/append/remove sections or full replace mode).",
+  "agents.defaults.systemPrompt.mode":
+    'System prompt mode: "default" keeps generated sections, "replace" uses only your custom prompt text.',
+  "agents.defaults.systemPrompt.prepend": "Text injected before generated system prompt sections.",
+  "agents.defaults.systemPrompt.append": "Text injected after generated system prompt sections.",
+  "agents.defaults.systemPrompt.removeSections":
+    "Stable section IDs to remove from the generated system prompt.",
+  "agents.defaults.systemPrompt.allowUnsafeReplace":
+    "Allow full replace mode even though it may remove built-in safety/tooling guidance.",
   "agents.defaults.envelopeTimezone":
     'Timezone for message envelopes ("utc", "local", "user", or an IANA timezone string).',
   "agents.defaults.envelopeTimestamp":
