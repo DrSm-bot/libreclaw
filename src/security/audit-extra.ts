@@ -16,6 +16,7 @@ export {
   collectHooksHardeningFindings,
   collectLikelyMultiUserSetupFindings,
   collectMinimalProfileOverrideFindings,
+  collectSystemPromptCustomizationFindings,
   collectModelHygieneFindings,
   collectNodeDangerousAllowCommandFindings,
   collectNodeDenyCommandPatternFindings,

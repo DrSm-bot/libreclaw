@@ -17,7 +17,48 @@ import { sanitizeForPromptLiteral } from "./sanitize-for-prompt.js";
 export type PromptMode = "full" | "minimal" | "none";
 type OwnerIdDisplay = "raw" | "hash";
 
-function buildSkillsSection(params: { skillsPrompt?: string; readToolName: string }) {
+/**
+ * Stable section IDs for configurable prompt composition (e.g. removeSections).
+ * Keep IDs backward-compatible once released.
+ */
+export const SYSTEM_PROMPT_SECTION_IDS = [
+  "tooling",
+  "tool_call_style",
+  "safety",
+  "openclaw_cli_quick_reference",
+  "skills",
+  "memory_recall",
+  "openclaw_self_update",
+  "model_aliases",
+  "workspace",
+  "documentation",
+  "sandbox",
+  "user_identity",
+  "current_date_time",
+  "workspace_files_injected",
+  "reply_tags",
+  "messaging",
+  "voice_tts",
+  "group_chat_context",
+  "subagent_context",
+  "reactions",
+  "reasoning_format",
+  "project_context",
+  "silent_replies",
+  "heartbeats",
+  "runtime",
+] as const;
+
+export type SystemPromptSectionId = (typeof SYSTEM_PROMPT_SECTION_IDS)[number];
+
+function buildSkillsSection(params: {
+  skillsPrompt?: string;
+  isMinimal: boolean;
+  readToolName: string;
+}) {
+  if (params.isMinimal) {
+    return [];
+  }
   const trimmed = params.skillsPrompt?.trim();
   if (!trimmed) {
     return [];

@@ -1002,6 +1002,42 @@ export function collectNodeDangerousAllowCommandFindings(
   return findings;
 }
 
+export function collectSystemPromptCustomizationFindings(
+  cfg: OpenClawConfig,
+): SecurityAuditFinding[] {
+  const findings: SecurityAuditFinding[] = [];
+  const customization = cfg.agents?.defaults?.systemPrompt;
+  if (!customization) {
+    return findings;
+  }
+
+  if (customization.mode === "replace") {
+    findings.push({
+      checkId: "agents.system_prompt.replace_mode",
+      severity: "warn",
+      title: "System prompt replace mode is enabled",
+      detail:
+        "agents.defaults.systemPrompt.mode=replace bypasses generated baseline sections and can remove built-in operational/safety guidance.",
+      remediation:
+        "Prefer mode=default with prepend/append/removeSections. Only use replace for intentionally curated full prompts.",
+    });
+  }
+
+  if (customization.allowUnsafeReplace === true) {
+    findings.push({
+      checkId: "agents.system_prompt.allow_unsafe_replace",
+      severity: "warn",
+      title: "Unsafe system prompt replace override is allowed",
+      detail:
+        "agents.defaults.systemPrompt.allowUnsafeReplace=true permits full prompt replacement even when it may remove built-in safety/tooling guidance.",
+      remediation:
+        "Set allowUnsafeReplace=false unless you explicitly need full prompt ownership and have reviewed the replacement prompt.",
+    });
+  }
+
+  return findings;
+}
+
 export function collectMinimalProfileOverrideFindings(cfg: OpenClawConfig): SecurityAuditFinding[] {
   const findings: SecurityAuditFinding[] = [];
   if (cfg.tools?.profile !== "minimal") {
