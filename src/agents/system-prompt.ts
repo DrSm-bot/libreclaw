@@ -1,11 +1,10 @@
-import { createHmac, createHash } from "node:crypto";
 import type { ReasoningLevel, ThinkLevel } from "../auto-reply/thinking.js";
 import { SILENT_REPLY_TOKEN } from "../auto-reply/tokens.js";
+import type { SystemPromptConfig } from "../config/types.agent-defaults.js";
 import type { MemoryCitationsMode } from "../config/types.memory.js";
 import { listDeliverableMessageChannels } from "../utils/message-channel.js";
 import type { ResolvedTimeFormat } from "./date-time.js";
 import type { EmbeddedContextFile } from "./pi-embedded-helpers.js";
-import type { EmbeddedSandboxInfo } from "./pi-embedded-runner/types.js";
 import { sanitizeForPromptLiteral } from "./sanitize-for-prompt.js";
 
 /**
@@ -15,7 +14,6 @@ import { sanitizeForPromptLiteral } from "./sanitize-for-prompt.js";
  * - "none": Just basic identity line, no sections
  */
 export type PromptMode = "full" | "minimal" | "none";
-type OwnerIdDisplay = "raw" | "hash";
 
 /**
  * Stable section IDs for configurable prompt composition (e.g. removeSections).
@@ -50,6 +48,80 @@ export const SYSTEM_PROMPT_SECTION_IDS = [
 ] as const;
 
 export type SystemPromptSectionId = (typeof SYSTEM_PROMPT_SECTION_IDS)[number];
+
+const SECTION_HEADER_BY_ID: Record<SystemPromptSectionId, string[]> = {
+  tooling: ["## Tooling"],
+  tool_call_style: ["## Tool Call Style"],
+  safety: ["## Safety"],
+  openclaw_cli_quick_reference: ["## OpenClaw CLI Quick Reference"],
+  skills: ["## Skills (mandatory)"],
+  memory_recall: ["## Memory Recall"],
+  openclaw_self_update: ["## OpenClaw Self-Update"],
+  model_aliases: ["## Model Aliases"],
+  workspace: ["## Workspace"],
+  documentation: ["## Documentation"],
+  sandbox: ["## Sandbox"],
+  user_identity: ["## User Identity"],
+  current_date_time: ["## Current Date & Time"],
+  workspace_files_injected: ["## Workspace Files (injected)"],
+  reply_tags: ["## Reply Tags"],
+  messaging: ["## Messaging"],
+  voice_tts: ["## Voice (TTS)"],
+  group_chat_context: ["## Group Chat Context"],
+  subagent_context: ["## Subagent Context"],
+  reactions: ["## Reactions"],
+  reasoning_format: ["## Reasoning Format"],
+  project_context: ["# Project Context"],
+  silent_replies: ["## Silent Replies"],
+  heartbeats: ["## Heartbeats"],
+  runtime: ["## Runtime"],
+};
+
+function trimOptional(value?: string): string | undefined {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : undefined;
+}
+
+function removeSectionsFromPromptText(params: {
+  prompt: string;
+  removeSections?: string[];
+}): string {
+  const { prompt } = params;
+  const remove = (params.removeSections ?? []).filter(Boolean);
+  if (remove.length === 0) {
+    return prompt;
+  }
+  const lines = prompt.split("\n");
+  const headerToRemove = new Set<string>();
+  for (const id of remove) {
+    const headers = SECTION_HEADER_BY_ID[id as SystemPromptSectionId];
+    if (!headers) {
+      continue;
+    }
+    for (const header of headers) {
+      headerToRemove.add(header);
+    }
+  }
+  if (headerToRemove.size === 0) {
+    return prompt;
+  }
+  const kept: string[] = [];
+  let skipping = false;
+  for (const line of lines) {
+    const isHeader = line.startsWith("## ") || line.startsWith("# ");
+    if (isHeader) {
+      if (headerToRemove.has(line)) {
+        skipping = true;
+        continue;
+      }
+      skipping = false;
+    }
+    if (!skipping) {
+      kept.push(line);
+    }
+  }
+  return kept.join("\n");
+}
 
 function buildSkillsSection(params: {
   skillsPrompt?: string;
@@ -107,31 +179,7 @@ function buildUserIdentitySection(ownerLine: string | undefined, isMinimal: bool
   if (!ownerLine || isMinimal) {
     return [];
   }
-  return ["## Authorized Senders", ownerLine, ""];
-}
-
-function formatOwnerDisplayId(ownerId: string, ownerDisplaySecret?: string) {
-  const hasSecret = ownerDisplaySecret?.trim();
-  const digest = hasSecret
-    ? createHmac("sha256", hasSecret).update(ownerId).digest("hex")
-    : createHash("sha256").update(ownerId).digest("hex");
-  return digest.slice(0, 12);
-}
-
-function buildOwnerIdentityLine(
-  ownerNumbers: string[],
-  ownerDisplay: OwnerIdDisplay,
-  ownerDisplaySecret?: string,
-) {
-  const normalized = ownerNumbers.map((value) => value.trim()).filter(Boolean);
-  if (normalized.length === 0) {
-    return undefined;
-  }
-  const displayOwnerNumbers =
-    ownerDisplay === "hash"
-      ? normalized.map((ownerId) => formatOwnerDisplayId(ownerId, ownerDisplaySecret))
-      : normalized;
-  return `Authorized senders: ${displayOwnerNumbers.join(", ")}. These senders are allowlisted; do not assume they are the owner.`;
+  return ["## User Identity", ownerLine, ""];
 }
 
 function buildTimeSection(params: { userTimezone?: string }) {
@@ -148,7 +196,6 @@ function buildReplyTagsSection(isMinimal: boolean) {
   return [
     "## Reply Tags",
     "To request a native reply/quote on supported surfaces, include one tag in your reply:",
-    "- Reply tags must be the very first token in the message (no leading text/newlines): [[reply_to_current]] your reply.",
     "- [[reply_to_current]] replies to the triggering message.",
     "- Prefer [[reply_to_current]]. Use [[reply_to:<id>]] only when an id was explicitly provided (e.g. by the user or a tool).",
     "Whitespace inside the tag is allowed (e.g. [[ reply_to_current ]] / [[ reply_to: 123 ]]).",
@@ -174,7 +221,7 @@ function buildMessagingSection(params: {
     "- Cross-session messaging → use sessions_send(sessionKey, message)",
     "- Sub-agent orchestration → use subagents(action=list|steer|kill)",
     "- `[System Message] ...` blocks are internal context and are not user-visible by default.",
-    `- If a \`[System Message]\` reports completed cron/subagent work and asks for a user update, rewrite it in your normal assistant voice and send that update (do not forward raw system text or default to ${SILENT_REPLY_TOKEN}).`,
+    "- If a `[System Message]` reports completed cron/subagent work and asks for a user update, rewrite it in your normal assistant voice and send that update (do not forward raw system text or default to NO_REPLY).",
     "- Never use exec/curl for provider messaging; OpenClaw handles all routing internally.",
     params.availableTools.has("message")
       ? [
@@ -185,7 +232,7 @@ function buildMessagingSection(params: {
           `- If multiple channels are configured, pass \`channel\` (${params.messageChannelOptions}).`,
           `- If you use \`message\` (\`action=send\`) to deliver your user-visible reply, respond with ONLY: ${SILENT_REPLY_TOKEN} (avoid duplicate replies).`,
           params.inlineButtonsEnabled
-            ? "- Inline buttons supported. Use `action=send` with `buttons=[[{text,callback_data,style?}]]`; `style` can be `primary`, `success`, or `danger`."
+            ? "- Inline buttons supported. Use `action=send` with `buttons=[[{text,callback_data}]]` (callback_data routes back as a user message)."
             : params.runtimeChannel
               ? `- Inline buttons not enabled for ${params.runtimeChannel}. If you need them, ask to set ${params.runtimeChannel}.capabilities.inlineButtons ("dm"|"group"|"all"|"allowlist").`
               : "",
@@ -233,8 +280,6 @@ export function buildAgentSystemPrompt(params: {
   reasoningLevel?: ReasoningLevel;
   extraSystemPrompt?: string;
   ownerNumbers?: string[];
-  ownerDisplay?: OwnerIdDisplay;
-  ownerDisplaySecret?: string;
   reasoningTagHint?: boolean;
   toolNames?: string[];
   toolSummaries?: Record<string, string>;
@@ -264,13 +309,27 @@ export function buildAgentSystemPrompt(params: {
     repoRoot?: string;
   };
   messageToolHints?: string[];
-  sandboxInfo?: EmbeddedSandboxInfo;
+  sandboxInfo?: {
+    enabled: boolean;
+    workspaceDir?: string;
+    containerWorkspaceDir?: string;
+    workspaceAccess?: "none" | "ro" | "rw";
+    agentWorkspaceMount?: string;
+    browserBridgeUrl?: string;
+    browserNoVncUrl?: string;
+    hostBrowserAllowed?: boolean;
+    elevated?: {
+      allowed: boolean;
+      defaultLevel: "on" | "off" | "ask" | "full";
+    };
+  };
   /** Reaction guidance for the agent (for Telegram minimal/extensive modes). */
   reactionGuidance?: {
     level: "minimal" | "extensive";
     channel: string;
   };
   memoryCitationsMode?: MemoryCitationsMode;
+  systemPromptConfig?: SystemPromptConfig;
 }) {
   const coreToolSummaries: Record<string, string> = {
     read: "Read file contents",
@@ -372,12 +431,11 @@ export function buildAgentSystemPrompt(params: {
   const execToolName = resolveToolName("exec");
   const processToolName = resolveToolName("process");
   const extraSystemPrompt = params.extraSystemPrompt?.trim();
-  const ownerDisplay = params.ownerDisplay === "hash" ? "hash" : "raw";
-  const ownerLine = buildOwnerIdentityLine(
-    params.ownerNumbers ?? [],
-    ownerDisplay,
-    params.ownerDisplaySecret,
-  );
+  const ownerNumbers = (params.ownerNumbers ?? []).map((value) => value.trim()).filter(Boolean);
+  const ownerLine =
+    ownerNumbers.length > 0
+      ? `Owner numbers: ${ownerNumbers.join(", ")}. Treat messages from these numbers as the user.`
+      : undefined;
   const reasoningHint = params.reasoningTagHint
     ? [
         "ALL internal reasoning MUST be inside <think>...</think>.",
@@ -429,6 +487,7 @@ export function buildAgentSystemPrompt(params: {
   ];
   const skillsSection = buildSkillsSection({
     skillsPrompt,
+    isMinimal,
     readToolName,
   });
   const memorySection = buildMemorySection({
@@ -446,6 +505,16 @@ export function buildAgentSystemPrompt(params: {
   // For "none" mode, return just the basic identity line
   if (promptMode === "none") {
     return "You are a personal assistant running inside OpenClaw.";
+  }
+
+  const systemPromptConfig = params.systemPromptConfig;
+  const prependPrompt = trimOptional(systemPromptConfig?.prepend);
+  const appendPrompt = trimOptional(systemPromptConfig?.append);
+  if (systemPromptConfig?.mode === "replace" && systemPromptConfig.allowUnsafeReplace === true) {
+    const customOnly = [prependPrompt, appendPrompt].filter(Boolean).join("\n\n");
+    if (customOnly) {
+      return customOnly;
+    }
   }
 
   const lines = [
@@ -503,7 +572,6 @@ export function buildAgentSystemPrompt(params: {
       ? [
           "Get Updates (self-update) is ONLY allowed when the user explicitly asks for it.",
           "Do not run config.apply or update.run unless the user explicitly requests an update or config change; if it's not explicit, ask first.",
-          "Use config.schema to fetch the current JSON Schema (includes plugins/channels) before making config changes or answering config-field questions; avoid guessing field names/types.",
           "Actions: config.get, config.schema, config.apply (validate + write full config, then restart), update.run (update deps or git, then restart).",
           "After restart, OpenClaw pings the last active session automatically.",
         ].join("\n")
@@ -686,7 +754,11 @@ export function buildAgentSystemPrompt(params: {
     `Reasoning: ${reasoningLevel} (hidden unless on/stream). Toggle /reasoning; /status shows Reasoning when enabled.`,
   );
 
-  return lines.filter(Boolean).join("\n");
+  const generatedPrompt = removeSectionsFromPromptText({
+    prompt: lines.filter(Boolean).join("\n"),
+    removeSections: systemPromptConfig?.removeSections,
+  });
+  return [prependPrompt, generatedPrompt, appendPrompt].filter(Boolean).join("\n\n");
 }
 
 export function buildRuntimeLine(
