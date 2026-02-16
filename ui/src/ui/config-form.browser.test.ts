@@ -494,6 +494,11 @@ describe("config form renderer", () => {
     expect(container.textContent).toContain("tooling");
     expect(container.textContent).toContain("runtime");
 
+    const toolingLabel = Array.from(
+      container.querySelectorAll<HTMLElement>(".cfg-check-grid__label"),
+    ).find((entry) => entry.textContent?.trim() === "tooling");
+    expect(toolingLabel?.getAttribute("title")).toContain("Available tools");
+
     const firstCheckbox = container.querySelector<HTMLInputElement>(".cfg-check-grid input");
     expect(firstCheckbox).not.toBeNull();
     if (!firstCheckbox) {
