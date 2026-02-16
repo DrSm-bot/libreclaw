@@ -105,16 +105,32 @@ function removeSectionsFromPromptText(params: {
   if (headerToRemove.size === 0) {
     return prompt;
   }
+
+  const getHeaderLevel = (line: string): number | null => {
+    const match = /^(#+)\s+/.exec(line);
+    return match ? match[1].length : null;
+  };
+
   const kept: string[] = [];
   let skipping = false;
+  let skipHeaderLevel: number | null = null;
   for (const line of lines) {
-    const isHeader = line.startsWith("## ") || line.startsWith("# ");
-    if (isHeader) {
-      if (headerToRemove.has(line)) {
+    const currentHeaderLevel = getHeaderLevel(line);
+    if (currentHeaderLevel !== null) {
+      if (!skipping && headerToRemove.has(line)) {
         skipping = true;
+        skipHeaderLevel = currentHeaderLevel;
         continue;
       }
-      skipping = false;
+      if (
+        skipping &&
+        skipHeaderLevel !== null &&
+        currentHeaderLevel <= skipHeaderLevel &&
+        !headerToRemove.has(line)
+      ) {
+        skipping = false;
+        skipHeaderLevel = null;
+      }
     }
     if (!skipping) {
       kept.push(line);
