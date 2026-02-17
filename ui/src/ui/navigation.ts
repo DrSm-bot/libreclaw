@@ -4,7 +4,7 @@ export const TAB_GROUPS = [
   { label: "Chat", tabs: ["chat"] },
   {
     label: "Control",
-    tabs: ["overview", "channels", "instances", "sessions", "usage", "cron"],
+    tabs: ["overview", "libreclaw", "channels", "instances", "sessions", "usage", "cron"],
   },
   { label: "Agent", tabs: ["agents", "skills", "nodes"] },
   { label: "Settings", tabs: ["config", "debug", "logs"] },
@@ -14,6 +14,7 @@ export type Tab =
   | "agents"
   | "overview"
   | "channels"
+  | "libreclaw"
   | "instances"
   | "sessions"
   | "usage"
@@ -29,6 +30,7 @@ const TAB_PATHS: Record<Tab, string> = {
   agents: "/agents",
   overview: "/overview",
   channels: "/channels",
+  libreclaw: "/libreclaw",
   instances: "/instances",
   sessions: "/sessions",
   usage: "/usage",
@@ -108,6 +110,11 @@ export function inferBasePathFromPathname(pathname: string): string {
   if (normalized === "/") {
     return "";
   }
+
+  const normalizedLower = normalized.toLowerCase();
+  if (PATH_TO_TAB.has(normalizedLower)) {
+    return "";
+  }
   const segments = normalized.split("/").filter(Boolean);
   if (segments.length === 0) {
     return "";
@@ -132,6 +139,8 @@ export function iconForTab(tab: Tab): IconName {
       return "barChart";
     case "channels":
       return "link";
+    case "libreclaw":
+      return "puzzle";
     case "instances":
       return "radio";
     case "sessions":
@@ -163,6 +172,8 @@ export function titleForTab(tab: Tab) {
       return "Overview";
     case "channels":
       return "Channels";
+    case "libreclaw":
+      return "LibreClaw";
     case "instances":
       return "Instances";
     case "sessions":
@@ -196,6 +207,8 @@ export function subtitleForTab(tab: Tab) {
       return "Gateway status, entry points, and a fast health read.";
     case "channels":
       return "Manage channels and settings.";
+    case "libreclaw":
+      return "LibreClaw-only features and fork-specific tooling.";
     case "instances":
       return "Presence beacons from connected clients and nodes.";
     case "sessions":
