@@ -366,6 +366,7 @@ export function renderApp(state: AppViewState) {
                 configForm: state.configForm,
                 configSnapshot: state.configSnapshot,
                 configSchema: state.configSchema,
+                configFormMode: state.configFormMode,
                 systemPromptPreview: state.systemPromptPreview,
                 systemPromptPreviewLoading: state.systemPromptPreviewLoading,
                 systemPromptPreviewError: state.systemPromptPreviewError,
