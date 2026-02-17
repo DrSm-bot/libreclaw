@@ -79,5 +79,11 @@ jobs:
       - name: Bundle Canvas A2UI
         run: pnpm canvas:a2ui:bundle
 
+      - name: Configure test resources
+        run: |
+          echo "OPENCLAW_TEST_WORKERS=2" >> "$GITHUB_ENV"
+          echo "OPENCLAW_TEST_MAX_OLD_SPACE_SIZE_MB=6144" >> "$GITHUB_ENV"
+          echo "NODE_OPTIONS=--max-old-space-size=6144" >> "$GITHUB_ENV"
+
       - name: Run tests
         run: pnpm test
