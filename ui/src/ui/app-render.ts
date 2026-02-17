@@ -359,6 +359,22 @@ export function renderApp(state: AppViewState) {
         }
 
         ${
+          state.tab === "libreclaw"
+            ? renderLibreClaw({
+                connected: state.connected,
+                hello: state.hello,
+                configForm: state.configForm,
+                configSnapshot: state.configSnapshot,
+                configSchema: state.configSchema,
+                systemPromptPreview: state.systemPromptPreview,
+                systemPromptPreviewLoading: state.systemPromptPreviewLoading,
+                systemPromptPreviewError: state.systemPromptPreviewError,
+                onPatch: (path, value) => updateConfigFormValue(state, path, value),
+              })
+            : nothing
+        }
+
+        ${
           state.tab === "channels"
             ? renderChannels({
                 connected: state.connected,
