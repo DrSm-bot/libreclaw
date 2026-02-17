@@ -752,6 +752,11 @@ function renderObject(params: {
   unsupported: Set<string>;
   disabled: boolean;
   showLabel?: boolean;
+  systemPromptPreview?: string;
+  systemPromptPreviewLoading?: boolean;
+  systemPromptPreviewError?: string | null;
+  systemPromptPreviewExpanded?: boolean;
+  onSystemPromptPreviewToggle?: (expanded: boolean) => void;
   onPatch: (path: Array<string | number>, value: unknown) => void;
 }): TemplateResult {
   const { schema, value, path, hints, unsupported, disabled, onPatch } = params;
@@ -790,6 +795,11 @@ function renderObject(params: {
         hints,
         unsupported,
         disabled,
+        systemPromptPreview: params.systemPromptPreview,
+        systemPromptPreviewLoading: params.systemPromptPreviewLoading,
+        systemPromptPreviewError: params.systemPromptPreviewError,
+        systemPromptPreviewExpanded: params.systemPromptPreviewExpanded,
+        onSystemPromptPreviewToggle: params.onSystemPromptPreviewToggle,
         onPatch,
       }),
     )}
@@ -802,6 +812,11 @@ function renderObject(params: {
             hints,
             unsupported,
             disabled,
+            systemPromptPreview: params.systemPromptPreview,
+            systemPromptPreviewLoading: params.systemPromptPreviewLoading,
+            systemPromptPreviewError: params.systemPromptPreviewError,
+            systemPromptPreviewExpanded: params.systemPromptPreviewExpanded,
+            onSystemPromptPreviewToggle: params.onSystemPromptPreviewToggle,
             reservedKeys: reserved,
             onPatch,
           })
@@ -841,6 +856,11 @@ function renderArray(params: {
   unsupported: Set<string>;
   disabled: boolean;
   showLabel?: boolean;
+  systemPromptPreview?: string;
+  systemPromptPreviewLoading?: boolean;
+  systemPromptPreviewError?: string | null;
+  systemPromptPreviewExpanded?: boolean;
+  onSystemPromptPreviewToggle?: (expanded: boolean) => void;
   onPatch: (path: Array<string | number>, value: unknown) => void;
 }): TemplateResult {
   const { schema, value, path, hints, unsupported, disabled, onPatch } = params;
@@ -916,6 +936,11 @@ function renderArray(params: {
                   unsupported,
                   disabled,
                   showLabel: false,
+                  systemPromptPreview: params.systemPromptPreview,
+                  systemPromptPreviewLoading: params.systemPromptPreviewLoading,
+                  systemPromptPreviewError: params.systemPromptPreviewError,
+                  systemPromptPreviewExpanded: params.systemPromptPreviewExpanded,
+                  onSystemPromptPreviewToggle: params.onSystemPromptPreviewToggle,
                   onPatch,
                 })}
               </div>
@@ -936,6 +961,11 @@ function renderMapField(params: {
   hints: ConfigUiHints;
   unsupported: Set<string>;
   disabled: boolean;
+  systemPromptPreview?: string;
+  systemPromptPreviewLoading?: boolean;
+  systemPromptPreviewError?: string | null;
+  systemPromptPreviewExpanded?: boolean;
+  onSystemPromptPreviewToggle?: (expanded: boolean) => void;
   reservedKeys: Set<string>;
   onPatch: (path: Array<string | number>, value: unknown) => void;
 }): TemplateResult {
@@ -1035,6 +1065,11 @@ function renderMapField(params: {
                           unsupported,
                           disabled,
                           showLabel: false,
+                          systemPromptPreview: params.systemPromptPreview,
+                          systemPromptPreviewLoading: params.systemPromptPreviewLoading,
+                          systemPromptPreviewError: params.systemPromptPreviewError,
+                          systemPromptPreviewExpanded: params.systemPromptPreviewExpanded,
+                          onSystemPromptPreviewToggle: params.onSystemPromptPreviewToggle,
                           onPatch,
                         })
                   }

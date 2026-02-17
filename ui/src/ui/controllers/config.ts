@@ -19,6 +19,18 @@ type SystemPromptPreviewPayload = {
   error?: string;
 };
 
+function withBasePath(path: string, basePath?: string): string {
+  if (!basePath) {
+    return path;
+  }
+  const normalizedBase = basePath.endsWith("/") ? basePath.slice(0, -1) : basePath;
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  if (!normalizedBase) {
+    return normalizedPath;
+  }
+  return `${normalizedBase}${normalizedPath}`;
+}
+
 function readSystemPromptConfig(state: ConfigState): Record<string, unknown> {
   const root = state.configForm ?? state.configSnapshot?.config ?? {};
   const agents =
@@ -46,7 +58,7 @@ async function requestSystemPromptPreview(state: ConfigState) {
   state.systemPromptPreviewError = null;
 
   try {
-    const res = await fetch("/api/system-prompt/preview", {
+    const res = await fetch(withBasePath("/api/system-prompt/preview", state.basePath), {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -87,6 +99,7 @@ export function scheduleSystemPromptPreview(state: ConfigState) {
 export type ConfigState = {
   client: GatewayBrowserClient | null;
   connected: boolean;
+  basePath: string;
   applySessionKey: string;
   configLoading: boolean;
   configRaw: string;
