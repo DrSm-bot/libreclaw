@@ -102,6 +102,16 @@ function resolveOnboardingMode(): boolean {
   return normalized === "1" || normalized === "true" || normalized === "yes" || normalized === "on";
 }
 
+const SYSTEM_PROMPT_PREVIEW_EXPANDED_KEY = "openclaw.config.systemPromptPreview.expanded";
+
+function loadSystemPromptPreviewExpanded(): boolean {
+  try {
+    return window.localStorage.getItem(SYSTEM_PROMPT_PREVIEW_EXPANDED_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
 @customElement("openclaw-app")
 export class OpenClawApp extends LitElement {
   @state() settings: UiSettings = loadSettings();
@@ -182,6 +192,10 @@ export class OpenClawApp extends LitElement {
   @state() configSearchQuery = "";
   @state() configActiveSection: string | null = null;
   @state() configActiveSubsection: string | null = null;
+  @state() systemPromptPreview = "";
+  @state() systemPromptPreviewLoading = false;
+  @state() systemPromptPreviewError: string | null = null;
+  @state() systemPromptPreviewExpanded = loadSystemPromptPreviewExpanded();
 
   @state() channelsLoading = false;
   @state() channelsSnapshot: ChannelsStatusSnapshot | null = null;

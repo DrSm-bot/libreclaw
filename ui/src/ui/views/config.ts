@@ -22,6 +22,10 @@ export type ConfigProps = {
   searchQuery: string;
   activeSection: string | null;
   activeSubsection: string | null;
+  systemPromptPreview?: string;
+  systemPromptPreviewLoading?: boolean;
+  systemPromptPreviewError?: string | null;
+  systemPromptPreviewExpanded?: boolean;
   onRawChange: (next: string) => void;
   onFormModeChange: (mode: "form" | "raw") => void;
   onFormPatch: (path: Array<string | number>, value: unknown) => void;
@@ -32,6 +36,7 @@ export type ConfigProps = {
   onSave: () => void;
   onApply: () => void;
   onUpdate: () => void;
+  onSystemPromptPreviewToggle?: (expanded: boolean) => void;
 };
 
 // SVG Icons for sidebar (Lucide-style)
@@ -713,6 +718,11 @@ export function renderConfig(props: ConfigProps) {
                         searchQuery: props.searchQuery,
                         activeSection: props.activeSection,
                         activeSubsection: effectiveSubsection,
+                        systemPromptPreview: props.systemPromptPreview,
+                        systemPromptPreviewLoading: props.systemPromptPreviewLoading,
+                        systemPromptPreviewError: props.systemPromptPreviewError,
+                        systemPromptPreviewExpanded: props.systemPromptPreviewExpanded,
+                        onSystemPromptPreviewToggle: props.onSystemPromptPreviewToggle,
                       })
                 }
                 ${

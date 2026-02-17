@@ -880,6 +880,10 @@ export function renderApp(state: AppViewState) {
                 searchQuery: state.configSearchQuery,
                 activeSection: state.configActiveSection,
                 activeSubsection: state.configActiveSubsection,
+                systemPromptPreview: state.systemPromptPreview,
+                systemPromptPreviewLoading: state.systemPromptPreviewLoading,
+                systemPromptPreviewError: state.systemPromptPreviewError,
+                systemPromptPreviewExpanded: state.systemPromptPreviewExpanded,
                 onRawChange: (next) => {
                   state.configRaw = next;
                 },
@@ -895,6 +899,17 @@ export function renderApp(state: AppViewState) {
                 onSave: () => saveConfig(state),
                 onApply: () => applyConfig(state),
                 onUpdate: () => runUpdate(state),
+                onSystemPromptPreviewToggle: (expanded) => {
+                  state.systemPromptPreviewExpanded = expanded;
+                  try {
+                    window.localStorage.setItem(
+                      "openclaw.config.systemPromptPreview.expanded",
+                      expanded ? "1" : "0",
+                    );
+                  } catch {
+                    // ignore storage failures (private mode / locked storage)
+                  }
+                },
               })
             : nothing
         }
