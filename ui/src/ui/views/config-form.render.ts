@@ -13,6 +13,11 @@ export type ConfigFormProps = {
   searchQuery?: string;
   activeSection?: string | null;
   activeSubsection?: string | null;
+  systemPromptPreview?: string;
+  systemPromptPreviewLoading?: boolean;
+  systemPromptPreviewError?: string | null;
+  systemPromptPreviewExpanded?: boolean;
+  onSystemPromptPreviewToggle?: (expanded: boolean) => void;
   onPatch: (path: Array<string | number>, value: unknown) => void;
 };
 
@@ -456,6 +461,11 @@ export function renderConfigForm(props: ConfigFormProps) {
                     unsupported,
                     disabled: props.disabled ?? false,
                     showLabel: false,
+                    systemPromptPreview: props.systemPromptPreview,
+                    systemPromptPreviewLoading: props.systemPromptPreviewLoading,
+                    systemPromptPreviewError: props.systemPromptPreviewError,
+                    systemPromptPreviewExpanded: props.systemPromptPreviewExpanded,
+                    onSystemPromptPreviewToggle: props.onSystemPromptPreviewToggle,
                     onPatch: props.onPatch,
                   })}
                 </div>
@@ -490,6 +500,11 @@ export function renderConfigForm(props: ConfigFormProps) {
                     unsupported,
                     disabled: props.disabled ?? false,
                     showLabel: false,
+                    systemPromptPreview: props.systemPromptPreview,
+                    systemPromptPreviewLoading: props.systemPromptPreviewLoading,
+                    systemPromptPreviewError: props.systemPromptPreviewError,
+                    systemPromptPreviewExpanded: props.systemPromptPreviewExpanded,
+                    onSystemPromptPreviewToggle: props.onSystemPromptPreviewToggle,
                     onPatch: props.onPatch,
                   })}
                 </div>

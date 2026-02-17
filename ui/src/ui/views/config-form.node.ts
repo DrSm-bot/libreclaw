@@ -158,6 +158,11 @@ export function renderNode(params: {
   unsupported: Set<string>;
   disabled: boolean;
   showLabel?: boolean;
+  systemPromptPreview?: string;
+  systemPromptPreviewLoading?: boolean;
+  systemPromptPreviewError?: string | null;
+  systemPromptPreviewExpanded?: boolean;
+  onSystemPromptPreviewToggle?: (expanded: boolean) => void;
   onPatch: (path: Array<string | number>, value: unknown) => void;
 }): TemplateResult | typeof nothing {
   const { schema, value, path, hints, unsupported, disabled, onPatch } = params;
@@ -528,10 +533,19 @@ function renderSystemPromptEditor(params: {
   path: Array<string | number>;
   hints: ConfigUiHints;
   disabled: boolean;
+  systemPromptPreview?: string;
+  systemPromptPreviewLoading?: boolean;
+  systemPromptPreviewError?: string | null;
+  systemPromptPreviewExpanded?: boolean;
+  onSystemPromptPreviewToggle?: (expanded: boolean) => void;
   onPatch: (path: Array<string | number>, value: unknown) => void;
 }): TemplateResult {
   const { schema, value, path, hints, disabled, onPatch } = params;
   const hint = hintForPath(path, hints);
+  const previewExpanded = params.systemPromptPreviewExpanded ?? false;
+  const previewLoading = params.systemPromptPreviewLoading ?? false;
+  const previewError = params.systemPromptPreviewError;
+  const previewText = params.systemPromptPreview ?? "";
   const label = hint?.label ?? schema.title ?? "System Prompt";
   const help = hint?.help ?? schema.description;
 
@@ -696,6 +710,36 @@ function renderSystemPromptEditor(params: {
           @input=${(e: Event) => onPatch(appendPath, (e.target as HTMLTextAreaElement).value)}
         ></textarea>
       </div>
+
+      <section class="config-preview config-preview--inline" aria-live="polite">
+        <button
+          type="button"
+          class="config-preview__toggle"
+          @click=${() => params.onSystemPromptPreviewToggle?.(!previewExpanded)}
+        >
+          <span class="config-preview__title">System Prompt Preview</span>
+          <span class="config-preview__status">${previewExpanded ? "Hide" : "Show"}</span>
+        </button>
+        ${
+          previewExpanded
+            ? html`
+                <div class="config-preview__meta">Unsaved changes are reflected before Save/Apply.</div>
+                ${
+                  previewLoading
+                    ? html`
+                        <div class="config-preview__status">Refreshing…</div>
+                      `
+                    : nothing
+                }
+                ${
+                  previewError
+                    ? html`<div class="callout danger">${previewError}</div>`
+                    : html`<pre class="code-block config-preview__body">${previewText || "Preview unavailable."}</pre>`
+                }
+              `
+            : nothing
+        }
+      </section>
     </section>
   `;
 }
