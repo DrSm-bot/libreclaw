@@ -374,7 +374,10 @@ export function renderApp(state: AppViewState) {
                 systemPromptPreview: state.systemPromptPreview,
                 systemPromptPreviewLoading: state.systemPromptPreviewLoading,
                 systemPromptPreviewError: state.systemPromptPreviewError,
-                onReload: () => loadConfig(state),
+                onReload: () => {
+                  state.configFormDirty = false;
+                  void loadConfig(state);
+                },
                 onSave: () => saveConfig(state),
                 onApply: () => applyConfig(state),
                 onPatch: (path, value) => updateConfigFormValue(state, path, value),

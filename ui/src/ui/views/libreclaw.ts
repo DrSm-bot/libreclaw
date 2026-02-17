@@ -233,10 +233,34 @@ export function renderLibreClaw(props: LibreClawProps) {
         <button class="btn" type="button" ?disabled=${props.configLoading} @click=${props.onReload}>
           ${props.configLoading ? "Loading…" : "Reload"}
         </button>
-        <button class="btn primary" type="button" ?disabled=${!canSave} @click=${props.onSave}>
+        <button
+          class="btn primary"
+          type="button"
+          ?disabled=${!canSave}
+          @click=${() => {
+            const confirmed = window.confirm("Save configuration changes?");
+            if (!confirmed) {
+              return;
+            }
+            props.onSave();
+          }}
+        >
           ${props.configSaving ? "Saving…" : "Save"}
         </button>
-        <button class="btn ghost" type="button" ?disabled=${!canApply} @click=${props.onApply}>
+        <button
+          class="btn ghost"
+          type="button"
+          ?disabled=${!canApply}
+          @click=${() => {
+            const confirmed = window.confirm(
+              "Save and restart gateway?\nThis will briefly interrupt active connections.",
+            );
+            if (!confirmed) {
+              return;
+            }
+            props.onApply();
+          }}
+        >
           ${props.configApplying ? "Applying…" : "Apply"}
         </button>
       </div>
