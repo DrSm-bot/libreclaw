@@ -34,16 +34,19 @@
   - Links: GitHub, Docs, Discord
   - Fork info / upstream version comparison (stretch)
 
-- [ ] **1.4** Feature toggles section (if applicable)
-  - Simple on/off switches for LibreClaw-specific features
-  - Connected to config state
+### Acceptance Criteria (testable)
 
-### Acceptance Criteria
+- [ ] `/libreclaw` route loads without console/runtime errors
+- [ ] Sidebar shows LibreClaw entry and navigation is functional
+- [ ] About panel displays LibreClaw version info + external links
+- [ ] No regressions in existing Dashboard routes/navigation (smoke)
 
-- [ ] `/libreclaw` route loads without errors
-- [ ] Sidebar shows LibreClaw entry
-- [ ] About panel displays version info
-- [ ] No regressions in existing Dashboard functionality
+### Sprint 1 Go / No-Go Checklist
+
+- [ ] Route + sidebar entry implemented and reachable
+- [ ] No new backend API required (or separately documented if needed)
+- [ ] Browser test coverage for route load + sidebar navigation exists
+- [ ] No change to existing config save/apply semantics
 
 ---
 
@@ -66,26 +69,27 @@
 - [ ] **2.3** Preview panel
   - Live preview using existing `/api/system-prompt/preview`
   - Debounced updates (300ms)
-  - Token counter display
+  - Token counter display (**estimate** label)
   - Section count (active/total)
 
-- [ ] **2.4** Controls migration
-  - Remove embedded preview from Config tree
+- [ ] **2.4** Controls migration (2-step)
+  - **Step A (compat):** Keep minimal Config tree entry with "Edit in Prompt Studio →" link
+  - **Step B (cleanup):** Remove embedded preview/control UI from Config tree after Studio is validated
   - Redirect users to LibreClaw section
-  - Config tree shows "Edit in Prompt Studio →" link
 
 - [ ] **2.5** Persistence
   - Save/Reset buttons
   - Unsaved changes indicator
   - Confirm dialog on navigation with unsaved changes
 
-### Acceptance Criteria
+### Acceptance Criteria (testable)
 
-- [ ] Prompt Studio fully functional
-- [ ] Token count displays correctly
-- [ ] Preview updates live on edits
-- [ ] Config changes persist correctly
-- [ ] No duplicate UI (Config tree cleaned up)
+- [ ] Prompt Studio loads and edits `agents.defaults.systemPrompt` via shared config state
+- [ ] Preview updates live on edits (debounced) and request path respects UI `basePath`
+- [ ] Token counter is clearly labeled as **estimate**
+- [ ] Unsaved-changes guard blocks route switch/back navigation and allows explicit confirm
+- [ ] Config changes persist correctly after Save/Apply + reload
+- [ ] Migration step A complete (no hard duplicate UX, no broken existing path)
 
 ---
 
@@ -125,6 +129,7 @@
 
 ## Future Ideas (Backlog)
 
+- [ ] Feature toggles section for LibreClaw-specific flags (moved from Sprint 1)
 - [ ] Agent Profile Quick-Switcher
 - [ ] Upstream Drift Detector (compare with openclaw/openclaw)
 - [ ] Prompt diff viewer
@@ -135,12 +140,19 @@
 
 ## Technical Decisions
 
-| Decision           | Choice                           | Rationale                                 |
-| ------------------ | -------------------------------- | ----------------------------------------- |
-| State management   | Reuse Config state               | No duplication, single source of truth    |
-| Migration strategy | Replace, not duplicate           | Prompt Studio replaces embedded config UI |
-| Styling            | Existing CSS patterns            | Consistency with Dashboard                |
-| Testing            | Browser tests for critical paths | Catch nested path / basePath issues       |
+| Decision           | Choice                           | Rationale                              |
+| ------------------ | -------------------------------- | -------------------------------------- |
+| State management   | Reuse Config state               | No duplication, single source of truth |
+| Migration strategy | Replace in 2 steps               | Safe transition + easy rollback        |
+| Styling            | Existing CSS patterns            | Consistency with Dashboard             |
+| Testing            | Browser tests for critical paths | Catch nested path / basePath issues    |
+
+### Upstream Compatibility Rules
+
+- Keep changes additive; do not rename/remove existing config keys in-place.
+- Preserve legacy config UI path during migration window (at least Step A).
+- New LibreClaw-specific fields must be optional with safe defaults.
+- Isolate fork-specific UX in dedicated view/components to reduce merge conflicts.
 
 ---
 
@@ -162,6 +174,7 @@
 - [x] Initial roadmap created
 - [x] Sprint structure defined
 - [x] Shared with Codex for feedback
+- [x] Roadmap refined with migration, compatibility, and testability guardrails
 
 ---
 
