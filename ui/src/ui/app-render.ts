@@ -367,9 +367,16 @@ export function renderApp(state: AppViewState) {
                 configSnapshot: state.configSnapshot,
                 configSchema: state.configSchema,
                 configFormMode: state.configFormMode,
+                configFormDirty: state.configFormDirty,
+                configLoading: state.configLoading,
+                configSaving: state.configSaving,
+                configApplying: state.configApplying,
                 systemPromptPreview: state.systemPromptPreview,
                 systemPromptPreviewLoading: state.systemPromptPreviewLoading,
                 systemPromptPreviewError: state.systemPromptPreviewError,
+                onReload: () => loadConfig(state),
+                onSave: () => saveConfig(state),
+                onApply: () => applyConfig(state),
                 onPatch: (path, value) => updateConfigFormValue(state, path, value),
               })
             : nothing

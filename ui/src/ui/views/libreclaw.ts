@@ -38,9 +38,16 @@ type LibreClawProps = {
   configSnapshot: { config?: Record<string, unknown> } | null;
   configSchema: unknown;
   configFormMode: "form" | "raw";
+  configFormDirty: boolean;
+  configLoading: boolean;
+  configSaving: boolean;
+  configApplying: boolean;
   systemPromptPreview: string;
   systemPromptPreviewLoading: boolean;
   systemPromptPreviewError: string | null;
+  onReload: () => void;
+  onSave: () => void;
+  onApply: () => void;
   onPatch: (path: Array<string | number>, value: unknown) => void;
 };
 
@@ -155,6 +162,14 @@ export function renderLibreClaw(props: LibreClawProps) {
   const configReady = Boolean(props.configSnapshot);
   const rawMode = props.configFormMode === "raw";
   const editorDisabled = !configReady || rawMode;
+  const canSave =
+    configReady && props.configFormDirty && !props.configLoading && !props.configSaving;
+  const canApply =
+    configReady &&
+    props.configFormDirty &&
+    !props.configLoading &&
+    !props.configSaving &&
+    !props.configApplying;
 
   const modePath: Array<string | number> = ["agents", "defaults", "systemPrompt", "mode"];
   const prependPath: Array<string | number> = ["agents", "defaults", "systemPrompt", "prepend"];
@@ -214,6 +229,17 @@ export function renderLibreClaw(props: LibreClawProps) {
     <section class="card" style="margin-top: 18px;">
       <div class="card-title">System Prompt Studio</div>
       <div class="card-sub">Editor + live preview for agents.defaults.systemPrompt.</div>
+      <div class="cfg-actions" style="margin-top: 12px;">
+        <button class="btn" type="button" ?disabled=${props.configLoading} @click=${props.onReload}>
+          ${props.configLoading ? "Loading…" : "Reload"}
+        </button>
+        <button class="btn primary" type="button" ?disabled=${!canSave} @click=${props.onSave}>
+          ${props.configSaving ? "Saving…" : "Save"}
+        </button>
+        <button class="btn ghost" type="button" ?disabled=${!canApply} @click=${props.onApply}>
+          ${props.configApplying ? "Applying…" : "Apply"}
+        </button>
+      </div>
 
       <div class="grid grid-cols-2" style="margin-top: 14px; gap: 16px; align-items: start;">
         <section class="card" style="margin: 0;">
