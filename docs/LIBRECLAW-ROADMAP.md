@@ -13,117 +13,78 @@
 
 ---
 
-## Sprint 1: Foundation + Quick Wins
+## Sprint 1: Foundation + Quick Wins ✅
 
-**Target:** 3-4 days | **Branch:** `feat/libreclaw-dashboard`
+**Status:** COMPLETE | **PR:** #7 (merged)
 
 ### Tasks
 
-- [ ] **1.1** New route `/libreclaw` in Dashboard
-  - Add view component `ui/src/ui/views/libreclaw.ts`
-  - Register route in app router
-  - Sidebar entry with 🦞 icon
-
-- [ ] **1.2** Basic layout skeleton
-  - Header with LibreClaw branding
-  - Subsection navigation (tabs or cards)
-  - Responsive layout
-
-- [ ] **1.3** "About LibreClaw" panel
-  - Version display
-  - Links: GitHub, Docs, Discord
-  - Fork info / upstream version comparison (stretch)
-
-### Acceptance Criteria (testable)
-
-- [ ] `/libreclaw` route loads without console/runtime errors
-- [ ] Sidebar shows LibreClaw entry and navigation is functional
-- [ ] About panel displays LibreClaw version info + external links
-- [ ] No regressions in existing Dashboard routes/navigation (smoke)
-
-### Sprint 1 Go / No-Go Checklist
-
-- [ ] Route + sidebar entry implemented and reachable
-- [ ] No new backend API required (or separately documented if needed)
-- [ ] Browser test coverage for route load + sidebar navigation exists
-- [ ] No change to existing config save/apply semantics
+- [x] **1.1** New route `/libreclaw` in Dashboard
+- [x] **1.2** Basic layout skeleton with LibreClaw branding
+- [x] **1.3** "About LibreClaw" panel with version + links
 
 ---
 
-## Sprint 2: System Prompt Studio
+## Sprint 2: System Prompt Studio ✅
 
-**Target:** 4-5 days | **Branch:** `feat/system-prompt-studio`
+**Status:** COMPLETE | **PR:** #8 (merged)
 
-### Tasks
+### Implemented Features
 
-- [ ] **2.1** Full-screen editor layout
-  - 50/50 split: Editor (left) | Preview (right)
-  - Resizable splitter (stretch goal)
+- [x] **2.1** 50/50 split layout (Editor | Preview)
+- [x] **2.2** Editor panel with Mode toggle, Prepend/Append, Section checkboxes
+- [x] **2.3** Live preview with debounced updates + token counter
+- [x] **2.4** LibreClaw moved to Settings section
+- [x] **2.5** Reload/Save/Apply with confirm dialogs
 
-- [ ] **2.2** Editor panel
-  - Mode toggle (Default / Customize / Replace)
-  - Prepend textarea with syntax highlighting (stretch)
-  - Append textarea
-  - Section checkboxes (grouped, searchable?)
+### Additional Fixes (from review)
 
-- [ ] **2.3** Preview panel
-  - Live preview using existing `/api/system-prompt/preview`
-  - Debounced updates (300ms)
-  - Token counter display (**estimate** label)
-  - Section count (active/total)
-
-- [ ] **2.4** Controls migration (2-step)
-  - **Step A (compat):** Keep minimal Config tree entry with "Edit in Prompt Studio →" link
-  - **Step B (cleanup):** Remove embedded preview/control UI from Config tree after Studio is validated
-  - Redirect users to LibreClaw section
-
-- [ ] **2.5** Persistence
-  - Save/Reset buttons
-  - Unsaved changes indicator
-  - Confirm dialog on navigation with unsaved changes
-
-### Acceptance Criteria (testable)
-
-- [ ] Prompt Studio loads and edits `agents.defaults.systemPrompt` via shared config state
-- [ ] Preview updates live on edits (debounced) and request path respects UI `basePath`
-- [ ] Token counter is clearly labeled as **estimate**
-- [ ] Unsaved-changes guard blocks route switch/back navigation and allows explicit confirm
-- [ ] Config changes persist correctly after Save/Apply + reload
-- [ ] Migration step A complete (no hard duplicate UX, no broken existing path)
+- [x] Replace mode requires explicit confirm + sets `allowUnsafeReplace`
+- [x] Flag cleared when exiting Replace mode (security)
+- [x] Editor disabled until config loaded (race condition fix)
+- [x] Save/Apply disabled when gateway disconnected
+- [x] Reload properly discards dirty state
 
 ---
 
-## Sprint 3: Polish & Extras
+## Sprint 3: Feature Discovery & Polish
 
-**Target:** 2-3 days | **Branch:** `feat/libreclaw-polish`
+**Status:** PLANNED | **Branch:** TBD
+
+### Core Idea: Feature Discovery Panel
+
+Instead of duplicating config UI, add a documentation panel below the Prompt Studio:
+
+- **What:** Cards/list explaining LibreClaw-specific features
+- **Why:** Users learn what's different without bloating the UI
+- **How:** Deep links to relevant Config tree paths
+
+### Features to Document
+
+| Feature                 | Config Path                           | Description                       |
+| ----------------------- | ------------------------------------- | --------------------------------- |
+| Multi-Agent Discord     | `channels.discord.historyIncludeBots` | Include bot messages in history   |
+| Context Security Labels | `messages.inbound.userContextLabels`  | Toggle untrusted content warnings |
+| Tool Profile "none"     | `tools.profile`                       | Completely disable all tools      |
 
 ### Tasks
 
-- [ ] **3.1** Keyboard shortcuts
+- [ ] **3.1** Feature Discovery Panel
+  - Cards with feature name, description, config path link
+  - "Configure →" buttons that navigate to Config tree
+- [ ] **3.2** Keyboard shortcuts (optional)
   - `Cmd/Ctrl + S` to save
-  - `Cmd/Ctrl + P` to toggle preview
   - `Escape` to reset
 
-- [ ] **3.2** Prompt templates (stretch)
-  - Save current config as named template
-  - Load from template library
-  - Default templates (minimal, full, custom)
+- [ ] **3.3** Documentation
+  - Update README with LibreClaw Dashboard screenshots
+  - Document new features in docs/
 
-- [ ] **3.3** UI polish
-  - Animations/transitions
-  - Loading states
-  - Error handling improvements
-  - Dark/light theme consistency
+### Open Questions
 
-- [ ] **3.4** Documentation
-  - Update docs with LibreClaw section usage
-  - Screenshots for README
-
-### Acceptance Criteria
-
-- [ ] Keyboard shortcuts work
-- [ ] Smooth UX with proper loading states
-- [ ] Documentation updated
+- Exact card design (collapsible? icons?)
+- Should links open Config in same tab or new section?
+- Codex feedback pending
 
 ---
 
@@ -175,6 +136,15 @@
 - [x] Sprint structure defined
 - [x] Shared with Codex for feedback
 - [x] Roadmap refined with migration, compatibility, and testability guardrails
+- [x] **Sprint 1 complete** — PR #7 merged (LibreClaw Dashboard Section)
+- [x] **Sprint 2 complete** — PR #8 merged (System Prompt Studio)
+  - Multiple review rounds with security/UX fixes
+  - Replace mode now requires explicit confirmation
+  - Reload properly restores saved config state
+- [x] Sprint 3 planning: Feature Discovery Panel concept
+  - Document LibreClaw patches without duplicating Config UI
+  - Deep links to Config tree paths
+  - Codex feedback requested
 
 ---
 
