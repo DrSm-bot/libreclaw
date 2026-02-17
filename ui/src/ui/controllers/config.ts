@@ -9,6 +9,81 @@ import {
   setPathValue,
 } from "./config/form-utils.ts";
 
+const PREVIEW_DEBOUNCE_MS = 300;
+const previewTimers = new WeakMap<ConfigState, number>();
+const previewAborts = new WeakMap<ConfigState, AbortController>();
+
+type SystemPromptPreviewPayload = {
+  ok?: boolean;
+  prompt?: string;
+  error?: string;
+};
+
+function readSystemPromptConfig(state: ConfigState): Record<string, unknown> {
+  const root = state.configForm ?? state.configSnapshot?.config ?? {};
+  const agents =
+    root.agents && typeof root.agents === "object" ? (root.agents as Record<string, unknown>) : {};
+  const defaults =
+    agents.defaults && typeof agents.defaults === "object"
+      ? (agents.defaults as Record<string, unknown>)
+      : {};
+  const systemPrompt =
+    defaults.systemPrompt && typeof defaults.systemPrompt === "object"
+      ? (defaults.systemPrompt as Record<string, unknown>)
+      : {};
+  return systemPrompt;
+}
+
+async function requestSystemPromptPreview(state: ConfigState) {
+  const prior = previewAborts.get(state);
+  if (prior) {
+    prior.abort();
+  }
+  const controller = new AbortController();
+  previewAborts.set(state, controller);
+
+  state.systemPromptPreviewLoading = true;
+  state.systemPromptPreviewError = null;
+
+  try {
+    const res = await fetch("/api/system-prompt/preview", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ systemPrompt: readSystemPromptConfig(state) }),
+      signal: controller.signal,
+    });
+    const json = (await res.json()) as SystemPromptPreviewPayload;
+    if (!res.ok || !json.ok || typeof json.prompt !== "string") {
+      state.systemPromptPreviewError = json.error ?? `Preview request failed (${res.status})`;
+      return;
+    }
+    state.systemPromptPreview = json.prompt;
+  } catch (err) {
+    if (!controller.signal.aborted) {
+      state.systemPromptPreviewError = String(err);
+    }
+  } finally {
+    if (previewAborts.get(state) === controller) {
+      state.systemPromptPreviewLoading = false;
+      previewAborts.delete(state);
+    }
+  }
+}
+
+export function scheduleSystemPromptPreview(state: ConfigState) {
+  const prior = previewTimers.get(state);
+  if (prior !== undefined) {
+    window.clearTimeout(prior);
+  }
+  const timer = window.setTimeout(() => {
+    previewTimers.delete(state);
+    void requestSystemPromptPreview(state);
+  }, PREVIEW_DEBOUNCE_MS);
+  previewTimers.set(state, timer);
+}
+
 export type ConfigState = {
   client: GatewayBrowserClient | null;
   connected: boolean;
@@ -33,6 +108,9 @@ export type ConfigState = {
   configSearchQuery: string;
   configActiveSection: string | null;
   configActiveSubsection: string | null;
+  systemPromptPreview: string;
+  systemPromptPreviewLoading: boolean;
+  systemPromptPreviewError: string | null;
   lastError: string | null;
 };
 
@@ -98,6 +176,7 @@ export function applyConfigSnapshot(state: ConfigState, snapshot: ConfigSnapshot
     state.configForm = cloneConfigObject(snapshot.config ?? {});
     state.configFormOriginal = cloneConfigObject(snapshot.config ?? {});
     state.configRawOriginal = rawFromSnapshot;
+    scheduleSystemPromptPreview(state);
   }
 }
 
@@ -178,7 +257,9 @@ export async function applyConfig(state: ConfigState) {
 }
 
 export async function runUpdate(state: ConfigState) {
-  if (!state.client || !state.connected) return;
+  if (!state.client || !state.connected) {
+    return;
+  }
 
   // Safety: prevent accidental one-click self-updates.
   // This is intentionally frictiony: users must type UPDATE.
@@ -216,6 +297,7 @@ export function updateConfigFormValue(
   if (state.configFormMode === "form") {
     state.configRaw = serializeConfigForm(base);
   }
+  scheduleSystemPromptPreview(state);
 }
 
 export function removeConfigFormValue(state: ConfigState, path: Array<string | number>) {
@@ -226,4 +308,5 @@ export function removeConfigFormValue(state: ConfigState, path: Array<string | n
   if (state.configFormMode === "form") {
     state.configRaw = serializeConfigForm(base);
   }
+  scheduleSystemPromptPreview(state);
 }

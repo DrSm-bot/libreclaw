@@ -32,6 +32,9 @@ function createState(): ConfigState {
     configUiHints: {},
     configValid: null,
     connected: false,
+    systemPromptPreview: "",
+    systemPromptPreviewLoading: false,
+    systemPromptPreviewError: null,
     lastError: null,
     updateRunning: false,
   };
@@ -285,6 +288,7 @@ describe("runUpdate", () => {
     state.connected = true;
     state.client = { request } as unknown as ConfigState["client"];
     state.applySessionKey = "agent:main:whatsapp:dm:+15555550123";
+    vi.spyOn(window, "prompt").mockReturnValue("UPDATE");
 
     await runUpdate(state);
 
