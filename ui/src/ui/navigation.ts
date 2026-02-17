@@ -110,6 +110,11 @@ export function inferBasePathFromPathname(pathname: string): string {
   if (normalized === "/") {
     return "";
   }
+
+  const normalizedLower = normalized.toLowerCase();
+  if (PATH_TO_TAB.has(normalizedLower)) {
+    return "";
+  }
   const segments = normalized.split("/").filter(Boolean);
   if (segments.length === 0) {
     return "";
