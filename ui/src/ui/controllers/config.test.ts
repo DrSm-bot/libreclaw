@@ -11,6 +11,7 @@ import {
 function createState(): ConfigState {
   return {
     applySessionKey: "main",
+    basePath: "",
     client: null,
     configActiveSection: null,
     configActiveSubsection: null,
