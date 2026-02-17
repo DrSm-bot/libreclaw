@@ -235,6 +235,24 @@ export function renderApp(state: AppViewState) {
             ? renderLibreClaw({
                 connected: state.connected,
                 hello: state.hello,
+                configForm: state.configForm,
+                configSnapshot: state.configSnapshot,
+                configSchema: state.configSchema,
+                configFormMode: state.configFormMode,
+                configFormDirty: state.configFormDirty,
+                configLoading: state.configLoading,
+                configSaving: state.configSaving,
+                configApplying: state.configApplying,
+                systemPromptPreview: state.systemPromptPreview,
+                systemPromptPreviewLoading: state.systemPromptPreviewLoading,
+                systemPromptPreviewError: state.systemPromptPreviewError,
+                onReload: () => {
+                  state.configFormDirty = false;
+                  void loadConfig(state);
+                },
+                onSave: () => saveConfig(state),
+                onApply: () => applyConfig(state),
+                onPatch: (path, value) => updateConfigFormValue(state, path, value),
               })
             : nothing
         }
