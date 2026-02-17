@@ -37,6 +37,7 @@ type LibreClawProps = {
   configForm: Record<string, unknown> | null;
   configSnapshot: { config?: Record<string, unknown> } | null;
   configSchema: unknown;
+  configFormMode: "form" | "raw";
   systemPromptPreview: string;
   systemPromptPreviewLoading: boolean;
   systemPromptPreviewError: string | null;
@@ -151,6 +152,9 @@ export function renderLibreClaw(props: LibreClawProps) {
     ? systemPrompt.removeSections.filter((entry): entry is string => typeof entry === "string")
     : [];
   const sections = readSectionOptions(props.configSchema);
+  const configReady = Boolean(props.configSnapshot);
+  const rawMode = props.configFormMode === "raw";
+  const editorDisabled = !configReady || rawMode;
 
   const modePath: Array<string | number> = ["agents", "defaults", "systemPrompt", "mode"];
   const prependPath: Array<string | number> = ["agents", "defaults", "systemPrompt", "prepend"];
@@ -215,12 +219,30 @@ export function renderLibreClaw(props: LibreClawProps) {
         <section class="card" style="margin: 0;">
           <div class="card-title" style="font-size: 14px;">Editor</div>
 
+          ${
+            !configReady
+              ? html`
+                  <div class="muted" style="margin-top: 8px">Loading config…</div>
+                `
+              : nothing
+          }
+          ${
+            rawMode
+              ? html`
+                  <div class="callout warn" style="margin-top: 8px">
+                    Raw mode is active in Config. Prompt Studio edits are disabled until you switch back to Form mode.
+                  </div>
+                `
+              : nothing
+          }
+
           <div class="cfg-field" style="margin-top: 10px;">
             <label class="cfg-field__label">Mode</label>
             <div class="cfg-segmented">
               <button
                 type="button"
                 class="cfg-segmented__btn ${mode === "default" ? "active" : ""}"
+                ?disabled=${editorDisabled}
                 @click=${() => {
                   props.onPatch(modePath, "default");
                   props.onPatch(prependPath, "");
@@ -233,6 +255,7 @@ export function renderLibreClaw(props: LibreClawProps) {
               <button
                 type="button"
                 class="cfg-segmented__btn ${mode === "customize" ? "active" : ""}"
+                ?disabled=${editorDisabled}
                 @click=${() => props.onPatch(modePath, "default")}
               >
                 Customize
@@ -240,7 +263,11 @@ export function renderLibreClaw(props: LibreClawProps) {
               <button
                 type="button"
                 class="cfg-segmented__btn ${mode === "replace" ? "active" : ""}"
-                @click=${() => props.onPatch(modePath, "replace")}
+                ?disabled=${editorDisabled}
+                @click=${() => {
+                  props.onPatch(modePath, "replace");
+                  props.onPatch(["agents", "defaults", "systemPrompt", "allowUnsafeReplace"], true);
+                }}
               >
                 Replace
               </button>
@@ -253,6 +280,7 @@ export function renderLibreClaw(props: LibreClawProps) {
               class="cfg-textarea cfg-textarea--prompt"
               rows="7"
               .value=${prepend}
+              ?disabled=${editorDisabled}
               placeholder="Optional text prepended to the generated system prompt"
               @input=${(e: Event) =>
                 props.onPatch(prependPath, (e.target as HTMLTextAreaElement).value)}
@@ -265,6 +293,7 @@ export function renderLibreClaw(props: LibreClawProps) {
               class="cfg-textarea cfg-textarea--prompt"
               rows="7"
               .value=${append}
+              ?disabled=${editorDisabled}
               placeholder="Optional text appended to the generated system prompt"
               @input=${(e: Event) => props.onPatch(appendPath, (e.target as HTMLTextAreaElement).value)}
             ></textarea>
@@ -280,6 +309,7 @@ export function renderLibreClaw(props: LibreClawProps) {
                     <input
                       type="checkbox"
                       .checked=${selected}
+                      ?disabled=${editorDisabled}
                       @change=${(e: Event) => {
                         const checked = (e.target as HTMLInputElement).checked;
                         const next = checked
