@@ -163,8 +163,13 @@ export function renderLibreClaw(props: LibreClawProps) {
   const rawMode = props.configFormMode === "raw";
   const editorDisabled = !configReady || rawMode;
   const canSave =
-    configReady && props.configFormDirty && !props.configLoading && !props.configSaving;
+    props.connected &&
+    configReady &&
+    props.configFormDirty &&
+    !props.configLoading &&
+    !props.configSaving;
   const canApply =
+    props.connected &&
     configReady &&
     props.configFormDirty &&
     !props.configLoading &&
@@ -174,6 +179,12 @@ export function renderLibreClaw(props: LibreClawProps) {
   const modePath: Array<string | number> = ["agents", "defaults", "systemPrompt", "mode"];
   const prependPath: Array<string | number> = ["agents", "defaults", "systemPrompt", "prepend"];
   const appendPath: Array<string | number> = ["agents", "defaults", "systemPrompt", "append"];
+  const allowUnsafeReplacePath: Array<string | number> = [
+    "agents",
+    "defaults",
+    "systemPrompt",
+    "allowUnsafeReplace",
+  ];
   const removeSectionsPath: Array<string | number> = [
     "agents",
     "defaults",
@@ -271,6 +282,7 @@ export function renderLibreClaw(props: LibreClawProps) {
                 ?disabled=${editorDisabled}
                 @click=${() => {
                   props.onPatch(modePath, "default");
+                  props.onPatch(allowUnsafeReplacePath, false);
                   props.onPatch(prependPath, "");
                   props.onPatch(appendPath, "");
                   props.onPatch(removeSectionsPath, []);
@@ -282,7 +294,10 @@ export function renderLibreClaw(props: LibreClawProps) {
                 type="button"
                 class="cfg-segmented__btn ${mode === "customize" ? "active" : ""}"
                 ?disabled=${editorDisabled}
-                @click=${() => props.onPatch(modePath, "default")}
+                @click=${() => {
+                  props.onPatch(modePath, "default");
+                  props.onPatch(allowUnsafeReplacePath, false);
+                }}
               >
                 Customize
               </button>
@@ -291,8 +306,14 @@ export function renderLibreClaw(props: LibreClawProps) {
                 class="cfg-segmented__btn ${mode === "replace" ? "active" : ""}"
                 ?disabled=${editorDisabled}
                 @click=${() => {
+                  const confirmed = window.confirm(
+                    "Replace mode bypasses all safety sections. Are you sure?",
+                  );
+                  if (!confirmed) {
+                    return;
+                  }
                   props.onPatch(modePath, "replace");
-                  props.onPatch(["agents", "defaults", "systemPrompt", "allowUnsafeReplace"], true);
+                  props.onPatch(allowUnsafeReplacePath, true);
                 }}
               >
                 Replace
