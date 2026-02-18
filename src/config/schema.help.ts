@@ -679,6 +679,8 @@ export const FIELD_HELP: Record<string, string> = {
     "Customize generated system prompts (prepend/append/remove sections or full replace mode).",
   "agents.defaults.systemPrompt.mode":
     'System prompt mode: "default" keeps generated sections, "replace" uses only your custom prompt text.',
+  "agents.defaults.systemPrompt.safetyStyle":
+    'Safety wording preset for the generated Safety section ("libreclaw" default = aligned-goals wording, "openclaw" = upstream no-independent-goals wording).',
   "agents.defaults.systemPrompt.prepend": "Text injected before generated system prompt sections.",
   "agents.defaults.systemPrompt.append": "Text injected after generated system prompt sections.",
   "agents.defaults.systemPrompt.removeSections":

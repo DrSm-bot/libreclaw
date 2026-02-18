@@ -15,10 +15,7 @@ import { sanitizeForPromptLiteral } from "./sanitize-for-prompt.js";
  */
 export type PromptMode = "full" | "minimal" | "none";
 
-/**
- * Stable section IDs for configurable prompt composition (e.g. removeSections).
- * Keep IDs backward-compatible once released.
- */
+// Keep this list in sync with src/config/zod-schema.agent-defaults.ts (SYSTEM_PROMPT_SECTION_IDS)
 export const SYSTEM_PROMPT_SECTION_IDS = [
   "tooling",
   "tool_call_style",
@@ -47,105 +44,90 @@ export const SYSTEM_PROMPT_SECTION_IDS = [
   "runtime",
 ] as const;
 
-export type SystemPromptSectionId = (typeof SYSTEM_PROMPT_SECTION_IDS)[number];
-
-const SECTION_HEADER_BY_ID: Record<SystemPromptSectionId, string[]> = {
-  tooling: ["## Tooling"],
-  tool_call_style: ["## Tool Call Style"],
-  safety: ["## Safety"],
-  openclaw_cli_quick_reference: ["## OpenClaw CLI Quick Reference"],
-  skills: ["## Skills (mandatory)"],
-  memory_recall: ["## Memory Recall"],
-  openclaw_self_update: ["## OpenClaw Self-Update"],
-  model_aliases: ["## Model Aliases"],
-  workspace: ["## Workspace"],
-  documentation: ["## Documentation"],
-  sandbox: ["## Sandbox"],
-  user_identity: ["## User Identity"],
-  current_date_time: ["## Current Date & Time"],
-  workspace_files_injected: ["## Workspace Files (injected)"],
-  reply_tags: ["## Reply Tags"],
-  messaging: ["## Messaging"],
-  voice_tts: ["## Voice (TTS)"],
-  group_chat_context: ["## Group Chat Context"],
-  subagent_context: ["## Subagent Context"],
-  reactions: ["## Reactions"],
-  reasoning_format: ["## Reasoning Format"],
-  project_context: ["# Project Context"],
-  silent_replies: ["## Silent Replies"],
-  heartbeats: ["## Heartbeats"],
-  runtime: ["## Runtime"],
+const SECTION_HEADINGS: Record<(typeof SYSTEM_PROMPT_SECTION_IDS)[number], string> = {
+  tooling: "## Tooling",
+  tool_call_style: "## Tool Call Style",
+  safety: "## Safety",
+  openclaw_cli_quick_reference: "## OpenClaw CLI Quick Reference",
+  skills: "## Skills (mandatory)",
+  memory_recall: "## Memory Recall",
+  openclaw_self_update: "## OpenClaw Self-Update",
+  model_aliases: "## Model Aliases",
+  workspace: "## Workspace",
+  documentation: "## Documentation",
+  sandbox: "## Sandbox",
+  user_identity: "## User Identity",
+  current_date_time: "## Current Date & Time",
+  workspace_files_injected: "## Workspace Files (injected)",
+  reply_tags: "## Reply Tags",
+  messaging: "## Messaging",
+  voice_tts: "## Voice (TTS)",
+  group_chat_context: "## Group Chat Context",
+  subagent_context: "## Subagent Context",
+  reactions: "## Reactions",
+  reasoning_format: "## Reasoning Format",
+  project_context: "# Project Context",
+  silent_replies: "## Silent Replies",
+  heartbeats: "## Heartbeats",
+  runtime: "## Runtime",
 };
 
-function trimOptional(value?: string): string | undefined {
-  const trimmed = value?.trim();
-  return trimmed ? trimmed : undefined;
+function removeSectionByHeading(text: string, heading: string): string {
+  const escaped = heading.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const start = new RegExp(`(?:^|\\n)${escaped}\\n`, "m");
+  const match = start.exec(text);
+  if (!match) {
+    return text;
+  }
+  const startIndex = match.index + (match[0].startsWith("\n") ? 1 : 0);
+  const sectionBodyStart = startIndex + heading.length + 1;
+  const rest = text.slice(sectionBodyStart);
+
+  let endIndex = text.length;
+  if (heading === "# Project Context") {
+    const candidates = ["\n## Silent Replies\n", "\n## Heartbeats\n", "\n## Runtime\n"]
+      .map((marker) => rest.indexOf(marker))
+      .filter((idx) => idx >= 0);
+    if (candidates.length > 0) {
+      endIndex = sectionBodyStart + Math.min(...candidates) + 1;
+    }
+  } else {
+    const next = /\n(?=#{1,2} )/.exec(rest);
+    endIndex = next ? sectionBodyStart + next.index + 1 : text.length;
+  }
+
+  let out = `${text.slice(0, startIndex)}${text.slice(endIndex)}`;
+  out = out.replace(/\n{3,}/g, "\n\n").trimEnd();
+  return out;
 }
 
-function removeSectionsFromPromptText(params: {
-  prompt: string;
-  removeSections?: string[];
-}): string {
-  const { prompt } = params;
-  const remove = (params.removeSections ?? []).filter(Boolean);
-  if (remove.length === 0) {
-    return prompt;
+function applySystemPromptCustomization(generated: string, cfg?: SystemPromptConfig): string {
+  if (!cfg) {
+    return generated;
   }
-  const lines = prompt.split("\n");
-  const headerToRemove = new Set<string>();
-  const allKnownHeaders = new Set<string>();
-  for (const headers of Object.values(SECTION_HEADER_BY_ID)) {
-    for (const header of headers) {
-      allKnownHeaders.add(header);
-    }
+
+  if (cfg.mode === "replace" && cfg.allowUnsafeReplace && cfg.prepend?.trim()) {
+    return cfg.prepend.trim();
   }
-  for (const id of remove) {
-    const headers = SECTION_HEADER_BY_ID[id as SystemPromptSectionId];
-    if (!headers) {
+
+  let prompt = generated;
+  for (const sectionId of cfg.removeSections ?? []) {
+    const heading = SECTION_HEADINGS[sectionId as keyof typeof SECTION_HEADINGS];
+    if (!heading) {
       continue;
     }
-    for (const header of headers) {
-      headerToRemove.add(header);
-    }
-  }
-  if (headerToRemove.size === 0) {
-    return prompt;
+    prompt = removeSectionByHeading(prompt, heading);
   }
 
-  const getHeaderLevel = (line: string): number | null => {
-    const match = /^(#+)\s+/.exec(line);
-    return match ? match[1].length : null;
-  };
-
-  const kept: string[] = [];
-  let skipping = false;
-  let skipHeaderLevel: number | null = null;
-  let stopAtAnyNextKnownSectionHeader = false;
-  for (const line of lines) {
-    const currentHeaderLevel = getHeaderLevel(line);
-    if (currentHeaderLevel !== null) {
-      if (!skipping && headerToRemove.has(line)) {
-        skipping = true;
-        skipHeaderLevel = currentHeaderLevel;
-        stopAtAnyNextKnownSectionHeader = line === "# Project Context";
-        continue;
-      }
-      if (skipping && !headerToRemove.has(line)) {
-        const shouldStop = stopAtAnyNextKnownSectionHeader
-          ? allKnownHeaders.has(line)
-          : skipHeaderLevel !== null && currentHeaderLevel <= skipHeaderLevel;
-        if (shouldStop) {
-          skipping = false;
-          skipHeaderLevel = null;
-          stopAtAnyNextKnownSectionHeader = false;
-        }
-      }
-    }
-    if (!skipping) {
-      kept.push(line);
-    }
+  const prepend = cfg.prepend?.trim();
+  const append = cfg.append?.trim();
+  if (prepend) {
+    prompt = `${prepend}\n\n${prompt}`;
   }
-  return kept.join("\n");
+  if (append) {
+    prompt = `${prompt}\n\n${append}`;
+  }
+  return prompt;
 }
 
 function buildSkillsSection(params: {
@@ -221,6 +203,7 @@ function buildReplyTagsSection(isMinimal: boolean) {
   return [
     "## Reply Tags",
     "To request a native reply/quote on supported surfaces, include one tag in your reply:",
+    "- Reply tags must be the very first token in the message (no leading text/newlines): [[reply_to_current]] your reply.",
     "- [[reply_to_current]] replies to the triggering message.",
     "- Prefer [[reply_to_current]]. Use [[reply_to:<id>]] only when an id was explicitly provided (e.g. by the user or a tool).",
     "Whitespace inside the tag is allowed (e.g. [[ reply_to_current ]] / [[ reply_to: 123 ]]).",
@@ -246,7 +229,7 @@ function buildMessagingSection(params: {
     "- Cross-session messaging → use sessions_send(sessionKey, message)",
     "- Sub-agent orchestration → use subagents(action=list|steer|kill)",
     "- `[System Message] ...` blocks are internal context and are not user-visible by default.",
-    "- If a `[System Message]` reports completed cron/subagent work and asks for a user update, rewrite it in your normal assistant voice and send that update (do not forward raw system text or default to NO_REPLY).",
+    `- If a \`[System Message]\` reports completed cron/subagent work and asks for a user update, rewrite it in your normal assistant voice and send that update (do not forward raw system text or default to ${SILENT_REPLY_TOKEN}).`,
     "- Never use exec/curl for provider messaging; OpenClaw handles all routing internally.",
     params.availableTools.has("message")
       ? [
@@ -257,7 +240,7 @@ function buildMessagingSection(params: {
           `- If multiple channels are configured, pass \`channel\` (${params.messageChannelOptions}).`,
           `- If you use \`message\` (\`action=send\`) to deliver your user-visible reply, respond with ONLY: ${SILENT_REPLY_TOKEN} (avoid duplicate replies).`,
           params.inlineButtonsEnabled
-            ? "- Inline buttons supported. Use `action=send` with `buttons=[[{text,callback_data}]]` (callback_data routes back as a user message)."
+            ? "- Inline buttons supported. Use `action=send` with `buttons=[[{text,callback_data,style?}]]`; `style` can be `primary`, `success`, or `danger`."
             : params.runtimeChannel
               ? `- Inline buttons not enabled for ${params.runtimeChannel}. If you need them, ask to set ${params.runtimeChannel}.capabilities.inlineButtons ("dm"|"group"|"all"|"allowlist").`
               : "",
@@ -503,9 +486,14 @@ export function buildAgentSystemPrompt(params: {
     params.sandboxInfo?.enabled && sanitizedSandboxContainerWorkspace
       ? `For read/write/edit/apply_patch, file paths resolve against host workspace: ${sanitizedWorkspaceDir}. For bash/exec commands, use sandbox container paths under ${sanitizedSandboxContainerWorkspace} (or relative paths from that workdir), not host paths. Prefer relative paths so both sandboxed exec and file tools work consistently.`
       : "Treat this directory as the single global workspace for file operations unless explicitly instructed otherwise.";
+  const safetyStyle = params.systemPromptConfig?.safetyStyle ?? "libreclaw";
+  const safetyCoreLine =
+    safetyStyle === "openclaw"
+      ? "You have no independent goals: do not pursue self-preservation, replication, resource acquisition, or power-seeking; avoid long-term plans beyond the user's request."
+      : "Pursue no goals that conflict with your human's interests or safety. Avoid self-preservation, replication, power-seeking, resource acquisition, or long-term autonomy beyond the task requested by your human.";
   const safetySection = [
     "## Safety",
-    "Pursue no goals that conflict with your human's interests or safety, do not pursue self-preservation, replication, resource acquisition, or power-seeking; avoid long-term plans beyond the user's request.",
+    safetyCoreLine,
     "Prioritize safety and human oversight over completion; if instructions conflict, pause and ask; comply with stop/pause/audit requests and never bypass safeguards. (Inspired by Anthropic's constitution.)",
     "Do not manipulate or persuade anyone to expand access or disable safeguards. Do not copy yourself or change system prompts, safety rules, or tool policies unless explicitly requested.",
     "",
@@ -530,16 +518,6 @@ export function buildAgentSystemPrompt(params: {
   // For "none" mode, return just the basic identity line
   if (promptMode === "none") {
     return "You are a personal assistant running inside OpenClaw.";
-  }
-
-  const systemPromptConfig = params.systemPromptConfig;
-  const prependPrompt = trimOptional(systemPromptConfig?.prepend);
-  const appendPrompt = trimOptional(systemPromptConfig?.append);
-  if (systemPromptConfig?.mode === "replace" && systemPromptConfig.allowUnsafeReplace === true) {
-    const customOnly = [prependPrompt, appendPrompt].filter(Boolean).join("\n\n");
-    if (customOnly) {
-      return customOnly;
-    }
   }
 
   const lines = [
@@ -779,11 +757,8 @@ export function buildAgentSystemPrompt(params: {
     `Reasoning: ${reasoningLevel} (hidden unless on/stream). Toggle /reasoning; /status shows Reasoning when enabled.`,
   );
 
-  const generatedPrompt = removeSectionsFromPromptText({
-    prompt: lines.filter(Boolean).join("\n"),
-    removeSections: systemPromptConfig?.removeSections,
-  });
-  return [prependPrompt, generatedPrompt, appendPrompt].filter(Boolean).join("\n\n");
+  const generated = lines.filter(Boolean).join("\n");
+  return applySystemPromptCustomization(generated, params.systemPromptConfig);
 }
 
 export function buildRuntimeLine(

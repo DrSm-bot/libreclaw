@@ -120,6 +120,8 @@ export type CliBackendConfig = {
 export type SystemPromptConfig = {
   /** Prompt composition mode: keep generated prompt (`default`) or replace it entirely (`replace`). */
   mode?: "default" | "replace";
+  /** Safety wording style for the generated Safety section. */
+  safetyStyle?: "libreclaw" | "openclaw";
   /** Text injected before generated prompt sections. */
   prepend?: string;
   /** Text injected after generated prompt sections. */

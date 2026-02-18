@@ -37,4 +37,15 @@ describe("config.systemPrompt removeSections", () => {
 
     expect(result.success).toBe(true);
   });
+
+  it("accepts safetyStyle presets", () => {
+    const libre = OpenClawSchema.safeParse({
+      agents: { defaults: { systemPrompt: { safetyStyle: "libreclaw" } } },
+    });
+    const oc = OpenClawSchema.safeParse({
+      agents: { defaults: { systemPrompt: { safetyStyle: "openclaw" } } },
+    });
+    expect(libre.success).toBe(true);
+    expect(oc.success).toBe(true);
+  });
 });
