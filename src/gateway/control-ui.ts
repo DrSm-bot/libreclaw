@@ -125,6 +125,12 @@ function normalizeSystemPromptConfig(value: unknown): SystemPromptConfig {
   const mode = obj.mode === "replace" ? "replace" : obj.mode === "default" ? "default" : undefined;
   const prepend = typeof obj.prepend === "string" ? obj.prepend : undefined;
   const append = typeof obj.append === "string" ? obj.append : undefined;
+  const safetyStyle =
+    obj.safetyStyle === "openclaw"
+      ? "openclaw"
+      : obj.safetyStyle === "libreclaw"
+        ? "libreclaw"
+        : undefined;
   const allowUnsafeReplace = obj.allowUnsafeReplace === true;
   const removeSections = Array.isArray(obj.removeSections)
     ? obj.removeSections.filter((entry): entry is string => typeof entry === "string")
@@ -133,6 +139,7 @@ function normalizeSystemPromptConfig(value: unknown): SystemPromptConfig {
     mode,
     prepend,
     append,
+    safetyStyle,
     allowUnsafeReplace,
     removeSections,
   };
