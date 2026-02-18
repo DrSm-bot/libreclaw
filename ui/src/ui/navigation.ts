@@ -23,6 +23,7 @@ export type Tab =
   | "nodes"
   | "chat"
   | "config"
+  | "libreclaw"
   | "debug"
   | "logs";
 
@@ -38,6 +39,7 @@ const TAB_PATHS: Record<Tab, string> = {
   nodes: "/nodes",
   chat: "/chat",
   config: "/config",
+  libreclaw: "/libreclaw",
   debug: "/debug",
   logs: "/logs",
 };
@@ -147,6 +149,8 @@ export function iconForTab(tab: Tab): IconName {
       return "monitor";
     case "config":
       return "settings";
+    case "libreclaw":
+      return "puzzle";
     case "debug":
       return "bug";
     case "logs":
