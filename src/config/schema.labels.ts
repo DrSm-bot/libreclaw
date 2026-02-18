@@ -131,6 +131,7 @@ export const FIELD_LABELS: Record<string, string> = {
   "agents.defaults.repoRoot": "Repo Root",
   "agents.defaults.systemPrompt": "System Prompt Customization",
   "agents.defaults.systemPrompt.mode": "System Prompt Mode",
+  "agents.defaults.systemPrompt.safetyStyle": "Safety Prompt Style",
   "agents.defaults.systemPrompt.prepend": "System Prompt Prepend",
   "agents.defaults.systemPrompt.append": "System Prompt Append",
   "agents.defaults.systemPrompt.removeSections": "System Prompt Removed Sections",

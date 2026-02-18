@@ -88,6 +88,7 @@ const FIELD_PLACEHOLDERS: Record<string, string> = {
 
 const FIELD_ORDERS: Record<string, number> = {
   "agents.defaults.systemPrompt.mode": 10,
+  "agents.defaults.systemPrompt.safetyStyle": 15,
   "agents.defaults.systemPrompt.allowUnsafeReplace": 20,
   "agents.defaults.systemPrompt.removeSections": 30,
   "agents.defaults.systemPrompt.prepend": 40,

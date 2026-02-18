@@ -85,4 +85,18 @@ describe("system prompt customization composition", () => {
     expect(prompt).toContain("## Heartbeats");
     expect(prompt).toContain("## Runtime");
   });
+
+  it("uses LibreClaw safety style by default", () => {
+    const prompt = buildAgentSystemPrompt({ workspaceDir: "/tmp/openclaw" });
+    expect(prompt).toContain("Pursue no goals that conflict with your human's interests or safety");
+    expect(prompt).not.toContain("You have no independent goals:");
+  });
+
+  it("switches to OpenClaw safety style when configured", () => {
+    const prompt = buildAgentSystemPrompt({
+      workspaceDir: "/tmp/openclaw",
+      systemPromptConfig: { safetyStyle: "openclaw" },
+    });
+    expect(prompt).toContain("You have no independent goals:");
+  });
 });

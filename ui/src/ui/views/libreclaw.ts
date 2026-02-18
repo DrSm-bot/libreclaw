@@ -155,6 +155,7 @@ export function renderLibreClaw(props: LibreClawProps) {
   const mode = resolveEditorMode(systemPrompt);
   const prepend = typeof systemPrompt.prepend === "string" ? systemPrompt.prepend : "";
   const append = typeof systemPrompt.append === "string" ? systemPrompt.append : "";
+  const safetyStyle = systemPrompt.safetyStyle === "openclaw" ? "openclaw" : "libreclaw";
   const removeSections = Array.isArray(systemPrompt.removeSections)
     ? systemPrompt.removeSections.filter((entry): entry is string => typeof entry === "string")
     : [];
@@ -179,6 +180,12 @@ export function renderLibreClaw(props: LibreClawProps) {
   const modePath: Array<string | number> = ["agents", "defaults", "systemPrompt", "mode"];
   const prependPath: Array<string | number> = ["agents", "defaults", "systemPrompt", "prepend"];
   const appendPath: Array<string | number> = ["agents", "defaults", "systemPrompt", "append"];
+  const safetyStylePath: Array<string | number> = [
+    "agents",
+    "defaults",
+    "systemPrompt",
+    "safetyStyle",
+  ];
   const allowUnsafeReplacePath: Array<string | number> = [
     "agents",
     "defaults",
@@ -342,6 +349,31 @@ export function renderLibreClaw(props: LibreClawProps) {
               >
                 Replace
               </button>
+            </div>
+          </div>
+
+          <div class="cfg-field" style="margin-top: 10px;">
+            <label class="cfg-field__label">🛡️ Safety Prompt Style</label>
+            <div class="cfg-segmented">
+              <button
+                type="button"
+                class="cfg-segmented__btn ${safetyStyle === "libreclaw" ? "active" : ""}"
+                ?disabled=${editorDisabled}
+                @click=${() => props.onPatch(safetyStylePath, "libreclaw")}
+              >
+                LibreClaw Default (Aligned Goals)
+              </button>
+              <button
+                type="button"
+                class="cfg-segmented__btn ${safetyStyle === "openclaw" ? "active" : ""}"
+                ?disabled=${editorDisabled}
+                @click=${() => props.onPatch(safetyStylePath, "openclaw")}
+              >
+                OpenClaw Standard (No Independent Goals)
+              </button>
+            </div>
+            <div class="muted" style="margin-top: 6px;">
+              Controls only the first Safety policy line in generated prompts. LibreClaw mode is default when unset.
             </div>
           </div>
 
