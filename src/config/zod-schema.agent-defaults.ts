@@ -86,6 +86,7 @@ export const AgentDefaultsSchema = z
     systemPrompt: z
       .object({
         mode: z.union([z.literal("default"), z.literal("replace")]).optional(),
+        safetyStyle: z.union([z.literal("libreclaw"), z.literal("openclaw")]).optional(),
         prepend: z.string().optional(),
         append: z.string().optional(),
         removeSections: z.array(SystemPromptSectionIdSchema).optional(),

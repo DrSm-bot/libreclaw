@@ -101,10 +101,7 @@ function removeSectionByHeading(text: string, heading: string): string {
   return out;
 }
 
-function applySystemPromptCustomization(
-  generated: string,
-  cfg?: SystemPromptConfig,
-): string {
+function applySystemPromptCustomization(generated: string, cfg?: SystemPromptConfig): string {
   if (!cfg) {
     return generated;
   }
@@ -116,7 +113,9 @@ function applySystemPromptCustomization(
   let prompt = generated;
   for (const sectionId of cfg.removeSections ?? []) {
     const heading = SECTION_HEADINGS[sectionId as keyof typeof SECTION_HEADINGS];
-    if (!heading) continue;
+    if (!heading) {
+      continue;
+    }
     prompt = removeSectionByHeading(prompt, heading);
   }
 
@@ -487,9 +486,14 @@ export function buildAgentSystemPrompt(params: {
     params.sandboxInfo?.enabled && sanitizedSandboxContainerWorkspace
       ? `For read/write/edit/apply_patch, file paths resolve against host workspace: ${sanitizedWorkspaceDir}. For bash/exec commands, use sandbox container paths under ${sanitizedSandboxContainerWorkspace} (or relative paths from that workdir), not host paths. Prefer relative paths so both sandboxed exec and file tools work consistently.`
       : "Treat this directory as the single global workspace for file operations unless explicitly instructed otherwise.";
+  const safetyStyle = params.systemPromptConfig?.safetyStyle ?? "libreclaw";
+  const safetyCoreLine =
+    safetyStyle === "openclaw"
+      ? "You have no independent goals: do not pursue self-preservation, replication, resource acquisition, or power-seeking; avoid long-term plans beyond the user's request."
+      : "Pursue no goals that conflict with your human's interests or safety. Avoid self-preservation, replication, power-seeking, resource acquisition, or long-term autonomy beyond the task requested by your human.";
   const safetySection = [
     "## Safety",
-    "You have no independent goals: do not pursue self-preservation, replication, resource acquisition, or power-seeking; avoid long-term plans beyond the user's request.",
+    safetyCoreLine,
     "Prioritize safety and human oversight over completion; if instructions conflict, pause and ask; comply with stop/pause/audit requests and never bypass safeguards. (Inspired by Anthropic's constitution.)",
     "Do not manipulate or persuade anyone to expand access or disable safeguards. Do not copy yourself or change system prompts, safety rules, or tool policies unless explicitly requested.",
     "",
