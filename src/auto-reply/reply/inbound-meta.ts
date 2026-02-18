@@ -1,6 +1,6 @@
-import type { TemplateContext } from "../templating.js";
 import { normalizeChatType } from "../../channels/chat-type.js";
 import { resolveSenderLabel } from "../../channels/sender-label.js";
+import type { TemplateContext } from "../templating.js";
 
 function safeTrim(value: unknown): string | undefined {
   if (typeof value !== "string") {
@@ -27,6 +27,7 @@ export function buildInboundMetaSystemPrompt(
     schema: "openclaw.inbound_meta.v1",
     message_id: options?.injectMessageId ? messageId : undefined,
     message_id_full: messageIdFull && messageIdFull !== messageId ? messageIdFull : undefined,
+    sender_id: safeTrim(ctx.SenderId),
     chat_id: chatId,
     reply_to_id: replyToId,
     channel: safeTrim(ctx.OriginatingChannel) ?? safeTrim(ctx.Surface) ?? safeTrim(ctx.Provider),
@@ -68,7 +69,9 @@ export function buildInboundUserContextPrefix(
   const labelFor = (trusted: string, untrusted: string) => (labels === "off" ? trusted : untrusted);
 
   const conversationInfo = {
+    message_id: safeTrim(ctx.MessageSid),
     conversation_label: isDirect ? undefined : safeTrim(ctx.ConversationLabel),
+    sender: safeTrim(ctx.SenderE164) ?? safeTrim(ctx.SenderId) ?? safeTrim(ctx.SenderUsername),
     group_subject: safeTrim(ctx.GroupSubject),
     group_channel: safeTrim(ctx.GroupChannel),
     group_space: safeTrim(ctx.GroupSpace),

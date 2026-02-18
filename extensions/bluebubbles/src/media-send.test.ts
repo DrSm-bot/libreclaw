@@ -1,8 +1,8 @@
-import type { OpenClawConfig, PluginRuntime } from "openclaw/plugin-sdk";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
+import type { OpenClawConfig, PluginRuntime } from "openclaw/plugin-sdk";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { sendBlueBubblesMedia } from "./media-send.js";
 import { setBlueBubblesRuntime } from "./runtime.js";
@@ -11,9 +11,13 @@ const sendBlueBubblesAttachmentMock = vi.hoisted(() => vi.fn());
 const sendMessageBlueBubblesMock = vi.hoisted(() => vi.fn());
 const resolveBlueBubblesMessageIdMock = vi.hoisted(() => vi.fn((id: string) => id));
 
-vi.mock("./attachments.js", () => ({
-  sendBlueBubblesAttachment: sendBlueBubblesAttachmentMock,
-}));
+vi.mock("./attachments.js", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("./attachments.js")>();
+  return {
+    ...actual,
+    sendBlueBubblesAttachment: sendBlueBubblesAttachmentMock,
+  };
+});
 
 vi.mock("./send.js", () => ({
   sendMessageBlueBubbles: sendMessageBlueBubblesMock,

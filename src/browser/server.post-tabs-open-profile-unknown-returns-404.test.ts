@@ -49,7 +49,9 @@ describe("profile CRUD endpoints", () => {
     state.testPort = await getFreePort();
     state.cdpBaseUrl = `http://127.0.0.1:${state.testPort + 1}`;
     state.prevGatewayPort = process.env.OPENCLAW_GATEWAY_PORT;
+    state.prevGatewayToken = process.env.OPENCLAW_GATEWAY_TOKEN;
     process.env.OPENCLAW_GATEWAY_PORT = String(state.testPort - 2);
+    process.env.OPENCLAW_GATEWAY_TOKEN = "browser-control-secret";
 
     vi.stubGlobal(
       "fetch",
@@ -71,6 +73,11 @@ describe("profile CRUD endpoints", () => {
     } else {
       process.env.OPENCLAW_GATEWAY_PORT = state.prevGatewayPort;
     }
+    if (state.prevGatewayToken === undefined) {
+      delete process.env.OPENCLAW_GATEWAY_TOKEN;
+    } else {
+      process.env.OPENCLAW_GATEWAY_TOKEN = state.prevGatewayToken;
+    }
     await stopBrowserControlServer();
   });
 
@@ -78,9 +85,14 @@ describe("profile CRUD endpoints", () => {
     await startBrowserControlServerFromConfig();
     const base = getBrowserControlServerBaseUrl();
 
+    const authHeaders = {
+      "Content-Type": "application/json",
+      Authorization: "Bearer browser-control-secret",
+    };
+
     const createMissingName = await realFetch(`${base}/profiles/create`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: authHeaders,
       body: JSON.stringify({}),
     });
     expect(createMissingName.status).toBe(400);
@@ -89,7 +101,7 @@ describe("profile CRUD endpoints", () => {
 
     const createInvalidName = await realFetch(`${base}/profiles/create`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: authHeaders,
       body: JSON.stringify({ name: "Invalid Name!" }),
     });
     expect(createInvalidName.status).toBe(400);
@@ -98,7 +110,7 @@ describe("profile CRUD endpoints", () => {
 
     const createDuplicate = await realFetch(`${base}/profiles/create`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: authHeaders,
       body: JSON.stringify({ name: "openclaw" }),
     });
     expect(createDuplicate.status).toBe(409);
@@ -107,7 +119,7 @@ describe("profile CRUD endpoints", () => {
 
     const createRemote = await realFetch(`${base}/profiles/create`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: authHeaders,
       body: JSON.stringify({ name: "remote", cdpUrl: "http://10.0.0.42:9222" }),
     });
     expect(createRemote.status).toBe(200);
@@ -122,7 +134,7 @@ describe("profile CRUD endpoints", () => {
 
     const createBadRemote = await realFetch(`${base}/profiles/create`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: authHeaders,
       body: JSON.stringify({ name: "badremote", cdpUrl: "ws://bad" }),
     });
     expect(createBadRemote.status).toBe(400);
@@ -131,6 +143,7 @@ describe("profile CRUD endpoints", () => {
 
     const deleteMissing = await realFetch(`${base}/profiles/nonexistent`, {
       method: "DELETE",
+      headers: { Authorization: "Bearer browser-control-secret" },
     });
     expect(deleteMissing.status).toBe(404);
     const deleteMissingBody = (await deleteMissing.json()) as { error: string };
@@ -138,6 +151,7 @@ describe("profile CRUD endpoints", () => {
 
     const deleteDefault = await realFetch(`${base}/profiles/openclaw`, {
       method: "DELETE",
+      headers: { Authorization: "Bearer browser-control-secret" },
     });
     expect(deleteDefault.status).toBe(400);
     const deleteDefaultBody = (await deleteDefault.json()) as { error: string };
@@ -145,6 +159,7 @@ describe("profile CRUD endpoints", () => {
 
     const deleteInvalid = await realFetch(`${base}/profiles/Invalid-Name!`, {
       method: "DELETE",
+      headers: { Authorization: "Bearer browser-control-secret" },
     });
     expect(deleteInvalid.status).toBe(400);
     const deleteInvalidBody = (await deleteInvalid.json()) as { error: string };

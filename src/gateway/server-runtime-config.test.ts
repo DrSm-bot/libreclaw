@@ -1,5 +1,15 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { resolveGatewayRuntimeConfig } from "./server-runtime-config.js";
+
+const prevGatewayToken = process.env.OPENCLAW_GATEWAY_TOKEN;
+
+afterEach(() => {
+  if (prevGatewayToken === undefined) {
+    delete process.env.OPENCLAW_GATEWAY_TOKEN;
+  } else {
+    process.env.OPENCLAW_GATEWAY_TOKEN = prevGatewayToken;
+  }
+});
 
 describe("resolveGatewayRuntimeConfig", () => {
   describe("trusted-proxy auth mode", () => {
@@ -79,6 +89,7 @@ describe("resolveGatewayRuntimeConfig", () => {
 
   describe("token/password auth modes", () => {
     it("should reject token mode without token configured", async () => {
+      delete process.env.OPENCLAW_GATEWAY_TOKEN;
       const cfg = {
         gateway: {
           bind: "lan" as const,
