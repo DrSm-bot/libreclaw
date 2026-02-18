@@ -150,7 +150,7 @@ export function iconForTab(tab: Tab): IconName {
     case "config":
       return "settings";
     case "libreclaw":
-      return "settings";
+      return "puzzle";
     case "debug":
       return "bug";
     case "logs":
