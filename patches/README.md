@@ -45,11 +45,11 @@ When updating from upstream OpenClaw:
 
 ## Upstream Policy
 
-**We do NOT submit upstream PRs.**
+**Aktuell keine Upstream-PRs.**
 
-OpenClaw's repo is overwhelmed with PRs (22k+) and Peter can only accept vetted contributions. Adding more PRs would create overhead rather than help. We maintain our fixes locally in LibreClaw.
+Nicht weil wir nicht wollen — wir würden gerne beitragen! Aber OpenClaw's Repo ist mit PRs überflutet (22k+) und Peter kann nur gevettete Contributions akzeptieren. Zusätzliche PRs würden mehr Overhead als Hilfe erzeugen.
 
-If upstream eventually fixes an issue we've patched, we can drop our local fix during the next merge.
+Wir pflegen unsere Fixes lokal in LibreClaw. Wenn Upstream irgendwann das gleiche fixt, droppen wir unseren Patch beim nächsten Merge.
 
 ---
 
