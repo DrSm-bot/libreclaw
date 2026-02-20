@@ -123,7 +123,7 @@ export async function preflightDiscordMessage(
         if (textForBotHistory) {
           recordPendingHistoryEntryIfEnabled({
             historyMap: params.guildHistories,
-            historyKey: message.channelId,
+            historyKey: messageChannelId,
             limit: params.historyLimit,
             entry: {
               sender: sender.label,

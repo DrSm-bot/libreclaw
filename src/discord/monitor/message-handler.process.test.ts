@@ -253,4 +253,41 @@ describe("processDiscordMessage session routing", () => {
       accountId: "default",
     });
   });
+
+  it("passes pending guild history entries in order for fast sequential messages", async () => {
+    const guildHistories = new Map([
+      [
+        "c1",
+        [
+          { sender: "bot-a", body: "chunk one", timestamp: 1, messageId: "m-prev-1" },
+          { sender: "bot-a", body: "chunk two", timestamp: 2, messageId: "m-prev-2" },
+        ],
+      ],
+    ]);
+    const ctx = await createBaseContext({
+      guildHistories,
+      historyLimit: 10,
+      message: {
+        id: "m3",
+        channelId: "c1",
+        timestamp: new Date().toISOString(),
+        attachments: [],
+      },
+      messageText: "@openclaw process now",
+      baseText: "@openclaw process now",
+      shouldRequireMention: true,
+      effectiveWasMentioned: true,
+    });
+
+    // oxlint-disable-next-line typescript/no-explicit-any
+    await processDiscordMessage(ctx as any);
+
+    const dispatchCall = dispatchInboundMessage.mock.calls.at(-1)?.[0] as
+      | { ctx?: { InboundHistory?: Array<{ body?: string }> } }
+      | undefined;
+    expect(dispatchCall?.ctx?.InboundHistory?.map((entry) => entry.body)).toEqual([
+      "chunk one",
+      "chunk two",
+    ]);
+  });
 });
