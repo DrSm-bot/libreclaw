@@ -16,7 +16,7 @@ This document tracks local fixes and patches that need to be preserved during up
 
 **Tests:** `src/discord/monitor/message-handler.preflight.test.ts` (236 lines of coverage)
 
-**Upstream Status:** Not yet submitted. Consider PR to openclaw/openclaw.
+**Upstream Status:** Local only. OpenClaw repo is overwhelmed with PRs — we maintain fixes locally.
 
 ---
 
@@ -43,14 +43,13 @@ When updating from upstream OpenClaw:
 - `src/discord/monitor/message-handler.process.ts` (related)
 - Any files listed in patch descriptions above
 
-## Submitting Upstream
+## Upstream Policy
 
-Patches that benefit the community should be submitted as PRs to `openclaw/openclaw`:
+**We do NOT submit upstream PRs.**
 
-| Patch | Upstream PR | Status |
-|-------|-------------|--------|
-| historyIncludeBots fix | — | Not submitted |
-| injectMessageId | — | LibreClaw-specific |
+OpenClaw's repo is overwhelmed with PRs (22k+) and Peter can only accept vetted contributions. Adding more PRs would create overhead rather than help. We maintain our fixes locally in LibreClaw.
+
+If upstream eventually fixes an issue we've patched, we can drop our local fix during the next merge.
 
 ---
 
