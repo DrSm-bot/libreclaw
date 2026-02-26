@@ -51,7 +51,33 @@ type LibreClawProps = {
   onPatch: (path: Array<string | number>, value: unknown) => void;
 };
 
-function pickVersion(snapshot: Record<string, unknown> | undefined): string {
+function formatLibreClawVersion(serverVersion: string | undefined): string {
+  if (!serverVersion || serverVersion === "dev") {
+    return "development";
+  }
+  // Parse git describe format: v2026.2.25-33-g2b9f97a500
+  const match = serverVersion.match(/^v?(\d+\.\d+\.\d+)(?:-(\d+)-g([a-f0-9]+))?$/);
+  if (match) {
+    const [, baseVersion, commits, _hash] = match;
+    if (commits && parseInt(commits) > 0) {
+      return `LibreClaw (OpenClaw ${baseVersion} +${commits} patches)`;
+    }
+    return `LibreClaw (OpenClaw ${baseVersion})`;
+  }
+  // Fallback: return as-is
+  return serverVersion;
+}
+
+function pickVersion(
+  hello: GatewayHelloOk | null,
+  snapshot: Record<string, unknown> | undefined,
+): string {
+  // First try server version from hello (git describe)
+  const serverVersion = hello?.server?.version;
+  if (serverVersion && serverVersion.trim().length > 0) {
+    return formatLibreClawVersion(serverVersion);
+  }
+  // Fallback to snapshot
   if (!snapshot || typeof snapshot !== "object") {
     return "unknown";
   }
@@ -59,14 +85,7 @@ function pickVersion(snapshot: Record<string, unknown> | undefined): string {
     .map((k) => snapshot[k])
     .find((v) => typeof v === "string" && v.trim().length > 0) as string | undefined;
   if (direct) {
-    return direct;
-  }
-  const status = snapshot.status;
-  if (status && typeof status === "object") {
-    const statusVersion = (status as Record<string, unknown>).version;
-    if (typeof statusVersion === "string" && statusVersion.trim().length > 0) {
-      return statusVersion;
-    }
+    return formatLibreClawVersion(direct);
   }
   return "unknown";
 }
@@ -150,7 +169,7 @@ function resolveEditorMode(systemPrompt: Record<string, unknown>): SystemPromptM
 
 export function renderLibreClaw(props: LibreClawProps) {
   const snapshot = props.hello?.snapshot as Record<string, unknown> | undefined;
-  const version = pickVersion(snapshot);
+  const version = pickVersion(props.hello, snapshot);
   const systemPrompt = readSystemPromptConfig(props);
   const mode = resolveEditorMode(systemPrompt);
   const prepend = typeof systemPrompt.prepend === "string" ? systemPrompt.prepend : "";
