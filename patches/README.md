@@ -4,9 +4,9 @@ Base: `v2026.2.25`
 Working branch: `upgrade/v2026.2.25-track1`
 
 ## Summary
-- Total applied commits above base: **24**
+- Total applied commits above base: **31**
 - Track A+C (core + CI): **12 commits**
-- Track B (systemPrompt/UI port): **12 commits**
+- Track B (systemPrompt/UI port): **19 commits**
 - Explicitly dropped during update: **2 old commits**
   - `41c83e9697` (`ci(develop): trigger on push and simplify nightly`)  
   - `c3f88dd5a0` (`fix: remove duplicate type declarations from cherry-pick conflicts`)
@@ -36,6 +36,13 @@ Working branch: `upgrade/v2026.2.25-track1`
 22. `16a5f2cf15` feat(ui): embed collapsible system prompt preview
 23. `12011d657e` fix(ui): wire base path + recursive preview props
 24. `f7bddb14b7` fix(prompt-port): align embedded runner with v2026.2.25 prompt API
+25. `98e1f00abe` feat(ui): add system prompt studio split view in libreclaw tab
+26. `ac1a18898f` fix(ui): gate prompt studio editor and enable unsafe replace
+27. `b13b5e5c83` feat(ui): add prompt studio actions and move libreclaw under settings
+28. `fc0ea55a56` fix(ui): confirm save/apply and make libreclaw reload discard dirty
+29. `f7b0de363f` feat(prompt-studio): add safety prompt style toggle and config
+30. `ffc97b4f27` fix(control-ui): forward safetyStyle in system prompt preview
+31. `c6f026fe1a` fix(ui): add LibreClaw tab to navigation with proper i18n
 
 ## Validation status
 - `pnpm build`: ✅
