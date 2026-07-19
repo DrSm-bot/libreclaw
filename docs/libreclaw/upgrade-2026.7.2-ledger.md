@@ -1,3 +1,13 @@
+---
+title: "LibreClaw 2026.7.2 downstream-delta ledger"
+sidebarTitle: "LibreClaw 2026.7.2 ledger"
+summary: "Upgrade ledger for rebuilding LibreClaw on OpenClaw 2026.7.2, including baseline smoke, Sol review gates, and downstream patch dispositions."
+read_when:
+  - Rebuilding LibreClaw on a new OpenClaw release
+  - Deciding whether to port downstream LibreClaw patches
+  - Reviewing the 2026.7.2 LibreClaw upgrade branch
+---
+
 # LibreClaw 2026.7.2 downstream-delta ledger
 
 Created: 2026-07-19
@@ -9,7 +19,7 @@ Created: 2026-07-19
 - Base SHA: `3201a91b3b807771db5d2e2b09455a4a652dc7d9`
 - Upstream ref SHA at freeze: `3201a91b3b807771db5d2e2b09455a4a652dc7d9`
 - Package version: `openclaw 2026.7.2-beta.4`
-- Worktree: `/home/clawd/repos/libreclaw-upgrade-2026.7.2`
+- Local worktree: separate clean checkout; operator-specific path intentionally omitted from docs.
 
 This branch intentionally starts from a clean upstream release foundation. Do not rebase or cherry-pick the previous LibreClaw stack wholesale.
 
@@ -33,7 +43,7 @@ Codex CLI `gpt-5.6-sol` with high reasoning returned `VERDICT: revise` for the u
 2. Maintain this exhaustive downstream-delta ledger; no remembered feature list as source of truth.
 3. Do not drop old visible-reply, wake, ACP, or Codex runtime patches by vibe; map source and run focused proof first.
 4. Explicitly do not restore old `openai-codex`/generated `CODEX_HOME` auth bridge unless a demonstrated current gap exists.
-5. Rework Creature Catalog as portable skill/workspace distribution rather than blind product-core copy.
+5. Rework Creature Catalog as a portable LibreClaw downstream-owned skill/workspace distribution rather than blind product-core copy.
 6. Treat `COORDINATION.md` injection as a design decision; prefer standard bootstrap files or managed/plugin hook over core change unless tests prove need/safety.
 7. Defer Prompt Studio v2 to separate architecture work; do not restore removed `systemPromptOverride` keys or shims.
 8. Each implemented feature slice must pass focused tests, changed checks, repository-native review, and Sol/high adversarial review-fix-until-clean.
@@ -61,9 +71,11 @@ Keep the workflow value, but do not copy the old skill verbatim. The old skill a
 
 - inspect current `simulated.site` schema/scripts;
 - make repository resolution portable/configurable;
-- decide whether this belongs as a managed/workspace skill, ClawHub package, or minimal bundled skill;
+- document why this is carried as a LibreClaw downstream-owned bundled skill, or move it to a managed/ClawHub path;
 - run focused validation against the catalog repo;
 - run Sol/high adversarial review/fix-until-clean before considering it carried.
+
+Validation caveat: direct `pnpm check:changed` is not currently usable on this host because Blacksmith Testbox/crabbox fails local binary sanity with `selected binary failed basic --version/--help sanity checks`. For docs/skill-only slices, run `pnpm check:changed --dry-run -- <changed files>` and execute the listed local gates individually until the crabbox path is repaired.
 
 ### Coordination context
 
