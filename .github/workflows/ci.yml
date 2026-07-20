@@ -175,16 +175,16 @@ jobs:
             done
           }
 
-          # Diff-base resolution needs the head's parent commits and trees
-          # (merge-head-diff-base.mjs and the name-only diffs), but not the
-          # parents' blobs. Fetching them blob-less keeps preflight several
-          # times faster than a full --depth=2 snapshot fetch.
+          # Diff-base resolution needs merge-head parent commits and, for
+          # ancestry-bridged PR heads, the PR-head parents too; the name-only
+          # diffs still do not need parent blobs. Fetching them blob-less keeps
+          # preflight several times faster than a full snapshot fetch.
           fetch_parent_metadata() {
             local sha="$1"
             for attempt in 1 2 3; do
               timeout --signal=TERM --kill-after=10s 120s git -C "$GITHUB_WORKSPACE" \
                 -c protocol.version=2 \
-                fetch --no-tags --prune --no-recurse-submodules --depth=2 \
+                fetch --no-tags --prune --no-recurse-submodules --depth=3 \
                 --filter=blob:none origin "$sha" && return 0
               if [ "$attempt" = "3" ]; then
                 return 1

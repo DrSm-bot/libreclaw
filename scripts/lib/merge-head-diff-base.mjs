@@ -26,11 +26,20 @@ export function resolveMergeHeadDiffBase({
 
   const firstParent = resolveCommit({ ref: parents[0], cwd, maxBuffer });
   const explicitBase = resolveCommit({ ref: base, cwd, maxBuffer });
-  if (!firstParent || firstParent === explicitBase) {
+  if (!firstParent) {
     return base;
   }
+  if (firstParent !== explicitBase) {
+    return firstParent;
+  }
 
-  return firstParent;
+  const bridgedHeadBase = resolveBridgedHeadBase({
+    headParent: parents[1],
+    explicitBase,
+    cwd,
+    maxBuffer,
+  });
+  return bridgedHeadBase || base;
 }
 
 function listCommitParents({ ref, cwd, maxBuffer }) {
@@ -58,6 +67,30 @@ function resolveCommit({ ref, cwd, maxBuffer }) {
   } catch {
     return "";
   }
+}
+
+function resolveBridgedHeadBase({ headParent, explicitBase, cwd, maxBuffer }) {
+  if (!headParent || !explicitBase) {
+    return "";
+  }
+
+  let current = headParent;
+  for (let depth = 0; depth < 8; depth += 1) {
+    const currentParents = listCommitParents({ ref: current, cwd, maxBuffer });
+    if (currentParents.length < 1) {
+      return "";
+    }
+    if (currentParents.length >= 2) {
+      const bridgeFirstParent = resolveCommit({ ref: currentParents[0], cwd, maxBuffer });
+      const bridgeSecondParent = resolveCommit({ ref: currentParents[1], cwd, maxBuffer });
+      if (bridgeFirstParent && bridgeSecondParent === explicitBase) {
+        return bridgeFirstParent;
+      }
+    }
+    current = currentParents[0];
+  }
+
+  return "";
 }
 
 function readRefValue(argv, index, optionName) {

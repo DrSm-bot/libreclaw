@@ -3148,13 +3148,16 @@ describe("ci workflow guards", () => {
       expect(checkoutStep.run, jobName).toContain("timed out on attempt $attempt; retrying");
       expect(checkoutStep.run, jobName).not.toContain("if timeout --signal=TERM");
       expect(checkoutStep.run, jobName).toContain("-c protocol.version=2");
-      // preflight fetches the head at depth 1 and supplements the parents
-      // blob-less; security-fast keeps depth 2 for its diff-base needs.
+      // preflight fetches the head at depth 1 and supplements merge-head / bridged
+      // PR-head parents blob-less; security-fast keeps depth 2 for its diff-base needs.
       const expectedDepth = jobName === "security-fast" ? 2 : 1;
       expect(checkoutStep.run, jobName).toContain(
         `fetch --no-tags --prune --no-recurse-submodules --depth=${expectedDepth} origin`,
       );
       if (jobName === "preflight") {
+        expect(checkoutStep.run, jobName).toContain(
+          "fetch --no-tags --prune --no-recurse-submodules --depth=3",
+        );
         expect(checkoutStep.run, jobName).toContain("--filter=blob:none");
         expect(checkoutStep.run, jobName).toContain("fetch_parent_metadata");
       }
