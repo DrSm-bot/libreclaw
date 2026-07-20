@@ -1697,6 +1697,7 @@ export const en: TranslationMap = {
     labs: "Labs",
     about: "About",
     aiAgents: "Agent Defaults",
+    promptStudio: "Prompt Studio",
     modelSetup: "Model Setup",
     modelProviders: "Model Providers",
     memoryImport: "Import Memory",
@@ -1736,6 +1737,7 @@ export const en: TranslationMap = {
     labs: "Experimental agent and tool capabilities.",
     about: "Control UI and connected Gateway build identity.",
     aiAgents: "Global agent defaults: models, skills, tools, memory, session.",
+    promptStudio: "Customize the operator-owned system prompt overlay.",
     modelSetup: "Connect a verified AI model",
     modelProviders: "Configured providers with plan, quota, and cost.",
     memoryImport: "Bring Codex and Claude Code memory into an agent workspace.",
@@ -1745,6 +1747,47 @@ export const en: TranslationMap = {
     debug: "Snapshots, events, RPC.",
     logs: "Live gateway logs.",
     plugin: "Plugin-provided panel.",
+  },
+  promptStudio: {
+    intro:
+      "Prompt Studio adds your instructions as a safe overlay on top of the generated OpenClaw system prompt. It does not replace safety, tools, workspace context, or provider-specific guidance.",
+    actions: {
+      apply: "Apply & restart",
+      applying: "Applying…",
+    },
+    status: {
+      ready: "Ready",
+      saving: "Saving…",
+      saved: "Saved",
+      error: "Save failed",
+      conflict: "Reload required",
+    },
+    editor: {
+      title: "Custom Instructions",
+      description:
+        "These instructions are inserted as a ## Custom Instructions section before the prompt cache boundary.",
+      status: "Status",
+      enableTitle: "Enable Prompt Studio overlay",
+      enableDescription:
+        "Turn this off to temporarily disable the custom instructions without deleting them.",
+      customInstructionsTitle: "Instructions",
+      customInstructionsDescription:
+        "Write stable preferences, house style, policies, or operating rules. Keep secrets out; prompt text can appear in diagnostics and previews.",
+      placeholder:
+        "Example: Be concise, cite files when making code claims, and preserve LibreClaw-specific privacy rules.",
+      configPath: "Config path",
+      configPathDescription: "The editor writes only this safe overlay field in openclaw.json.",
+      resetTitle: "Clear instructions",
+      resetDescription: "Remove the custom instructions field from the draft config.",
+      resetButton: "Clear text",
+    },
+    preview: {
+      title: "Prompt preview",
+      description:
+        "This is the exact section Prompt Studio contributes. Full prompt preview stays separate because it may expose private workspace context.",
+      sectionTitle: "Injected section",
+      empty: "No custom instruction section will be injected.",
+    },
   },
   modelSetup: {
     heading: "Connect your AI",

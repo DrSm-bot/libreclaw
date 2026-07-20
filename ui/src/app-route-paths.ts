@@ -24,6 +24,7 @@ const APP_ROUTE_DEFINITIONS = {
   labs: { path: "/settings/labs" },
   about: { path: "/settings/about" },
   "ai-agents": { path: "/settings/ai-agents", aliases: ["/ai-agents"] },
+  "prompt-studio": { path: "/settings/prompt-studio", aliases: ["/prompt-studio"] },
   "model-setup": { path: "/settings/model-setup", aliases: ["/model-setup"] },
   "model-providers": { path: "/settings/model-providers", aliases: ["/model-providers"] },
   // Memory import, sessions, and worktrees are workspace destinations; the

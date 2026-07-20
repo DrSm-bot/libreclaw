@@ -24,6 +24,7 @@ import { page as nodesPage } from "./pages/nodes/route.ts";
 import { page as pluginPage } from "./pages/plugin/route.ts";
 import { page as pluginsPage } from "./pages/plugins/route.ts";
 import { page as profilePage } from "./pages/profile/route.ts";
+import { page as promptStudioPage } from "./pages/prompt-studio/route.ts";
 import { page as sessionsPage } from "./pages/sessions/route.ts";
 import { page as skillWorkshopPage } from "./pages/skill-workshop/route.ts";
 import { page as skillsPage } from "./pages/skills/route.ts";
@@ -61,6 +62,7 @@ const APP_ROUTE_TREE = [
   modelProvidersPage,
   memoryImportPage,
   profilePage,
+  promptStudioPage,
   workboardPage,
   worktreesPage,
   sessionsPage,

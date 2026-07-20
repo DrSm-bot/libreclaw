@@ -755,3 +755,25 @@ textarea.settings-input {
     flex-wrap: wrap;
   }
 }
+
+/* ── Prompt Studio ── */
+
+.prompt-studio-editor {
+  min-height: 240px;
+}
+
+.prompt-studio-preview {
+  width: 100%;
+  min-height: 88px;
+  margin: 0;
+  padding: var(--space-3);
+  overflow: auto;
+  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--bg) 82%, var(--bg-elevated) 18%);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: var(--control-ui-text-sm);
+  line-height: 1.55;
+  white-space: pre-wrap;
+}

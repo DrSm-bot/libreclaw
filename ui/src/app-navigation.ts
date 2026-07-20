@@ -175,7 +175,15 @@ export const SETTINGS_NAVIGATION_GROUPS = [
   },
   {
     labelKey: "nav.settingsGroupAgents",
-    routes: ["agents", "ai-agents", "labs", "model-providers", "mcp", "automation"],
+    routes: [
+      "agents",
+      "ai-agents",
+      "prompt-studio",
+      "labs",
+      "model-providers",
+      "mcp",
+      "automation",
+    ],
   },
   {
     labelKey: "nav.settingsGroupSecurity",
@@ -232,6 +240,7 @@ const NAVIGATION_ICONS: NavigationItem = {
   labs: "spark",
   about: "fileText",
   "ai-agents": "brain",
+  "prompt-studio": "scrollText",
   "model-setup": "spark",
   "model-providers": "plug",
   "memory-import": "download",
@@ -335,6 +344,7 @@ const NAVIGATION_COPY: Record<NavigationRouteId, { titleKey: string; subtitleKey
   labs: { titleKey: "tabs.labs", subtitleKey: "subtitles.labs" },
   about: { titleKey: "tabs.about", subtitleKey: "subtitles.about" },
   "ai-agents": { titleKey: "tabs.aiAgents", subtitleKey: "subtitles.aiAgents" },
+  "prompt-studio": { titleKey: "tabs.promptStudio", subtitleKey: "subtitles.promptStudio" },
   "model-setup": { titleKey: "tabs.modelSetup", subtitleKey: "subtitles.modelSetup" },
   "model-providers": {
     titleKey: "tabs.modelProviders",
