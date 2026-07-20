@@ -110,7 +110,7 @@ Initial disposition: `prove-before-port`. Current outcomes:
 
 Validation for the visible-delivery slice:
 
-- `node scripts/run-vitest.mjs run src/auto-reply/reply/agent-runner-execution-cli-progress.test.ts src/auto-reply/reply/agent-runner-execution-cli-block-replies.test.ts src/auto-reply/reply/agent-runner-cli-dispatch.test.ts src/auto-reply/reply/reply-delivery.test.ts src/auto-reply/reply/agent-runner-payloads.test.ts` — passed, 5 files / 132 tests.
+- `node scripts/run-vitest.mjs run src/auto-reply/reply/agent-runner-execution-cli-progress.test.ts src/auto-reply/reply/agent-runner-execution-cli-block-replies.test.ts src/auto-reply/reply/agent-runner-cli-dispatch.test.ts src/auto-reply/reply/reply-delivery.test.ts src/auto-reply/reply/agent-runner-payloads.test.ts` — passed, 5 files / 133 tests.
 - `node scripts/run-tsgo.mjs -p tsconfig.core.json --incremental --tsBuildInfoFile .artifacts/tsgo-cache/core.tsbuildinfo && node scripts/run-tsgo.mjs -p test/tsconfig/tsconfig.core.test.json --incremental --tsBuildInfoFile .artifacts/tsgo-cache/core-test.tsbuildinfo` — passed.
 
 ## Complete patch-id ledger vs 2026.7.2
