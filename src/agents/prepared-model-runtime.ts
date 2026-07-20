@@ -38,7 +38,9 @@ export type {
 } from "./prepared-model-runtime.owner.js";
 
 const log = createSubsystemLogger("agents/prepared-model-runtime");
-const DEFAULT_MODEL_RUNTIME_BUILD_TIMEOUT_MS = 30_000;
+// Large multi-agent installations can exceed 30 seconds while publishing all configured
+// runtimes after an auth-store migration. Keep startup bounded without rejecting healthy work.
+const DEFAULT_MODEL_RUNTIME_BUILD_TIMEOUT_MS = 90_000;
 let modelRuntimeBuildTimeoutMs = DEFAULT_MODEL_RUNTIME_BUILD_TIMEOUT_MS;
 
 const owners = new Map<string, PreparedModelRuntimeOwner>();
