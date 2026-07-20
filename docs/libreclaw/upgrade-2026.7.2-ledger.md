@@ -55,11 +55,11 @@ Codex CLI `gpt-5.6-sol` with high reasoning returned `VERDICT: revise` for the u
 - drop-or-prove: 36
 - drop/product: 10
 - drop/release-train: 70
-- keep/rework: 4
+- keep/rework: 5
 - prove-before-port: 1
 - rework-if-needed: 1
 - rework-later: 4
-- rework/decide: 2
+- rework/decide: 1
 
 ## Carry-forward decisions
 
@@ -79,15 +79,20 @@ Validation caveat: direct `pnpm check:changed` is not currently usable on this h
 
 ### Coordination context
 
-Disposition: `rework/decide`.
+Disposition: `keep/rework`.
 
-Upstream now has `bootstrap-extra-files`, but it intentionally allows only recognized bootstrap basenames, not `COORDINATION.md`. Options:
+Upstream now has `bootstrap-extra-files`, but it intentionally allows only recognized bootstrap basenames, not `COORDINATION.md`. LibreClaw still wants `COORDINATION.md` for the main configured agents only; it is explicitly not required or wanted for subagents, ACP workers, cron workers, or other detached worker contexts.
 
-1. Move coordination context into a recognized bootstrap file such as `AGENTS.md`/`TOOLS.md`/`HEARTBEAT.md`.
-2. Use a managed/workspace hook or plugin for `COORDINATION.md`.
-3. Reintroduce a core bundled hook only if cross-runtime proof passes.
+Current outcome: reintroduced the narrow bundled `coordination-md` hook rather than widening the standard bootstrap filename allowlist. The hook loads workspace `COORDINATION.md` during `agent:bootstrap` only for recognized top-level agent sessions, uses the shared boundary-safe pinned workspace bootstrap reader, deduplicates already-injected files, and skips unknown, subagent, ACP worker, and cron worker session keys.
 
-Required proof if any hook is carried: main-agent bootstrap, subagent filtering, heartbeat, compaction, and native Codex behavior.
+Validation for the coordination slice:
+
+- `node scripts/run-vitest.mjs run src/hooks/bundled/coordination-md/handler.test.ts src/hooks/bundled/bootstrap-extra-files/handler.test.ts src/agents/bootstrap-hooks.test.ts src/agents/bootstrap-files.test.ts` — passed, 3 shards / 55 tests.
+- `node scripts/run-tsgo.mjs -p tsconfig.core.json --incremental --tsBuildInfoFile .artifacts/tsgo-cache/core.tsbuildinfo && node scripts/run-tsgo.mjs -p test/tsconfig/tsconfig.core.test.json --incremental --tsBuildInfoFile .artifacts/tsgo-cache/core-test.tsbuildinfo` — passed.
+- `node scripts/run-oxlint.mjs --tsconfig config/tsconfig/oxlint.core.json src/hooks/bundled/coordination-md/handler.test.ts src/hooks/bundled/coordination-md/handler.ts && node scripts/check-native-state-schema-version.mjs` — passed.
+- `pnpm format:check --no-error-on-unmatched-pattern -- docs/libreclaw/upgrade-2026.7.2-ledger.md src/hooks/bundled/README.md src/hooks/bundled/coordination-md/HOOK.md src/hooks/bundled/coordination-md/handler.ts src/hooks/bundled/coordination-md/handler.test.ts && pnpm check:no-conflict-markers && node scripts/check-changed.mjs --dry-run -- docs/libreclaw/upgrade-2026.7.2-ledger.md src/hooks/bundled/README.md src/hooks/bundled/coordination-md/HOOK.md src/hooks/bundled/coordination-md/handler.ts src/hooks/bundled/coordination-md/handler.test.ts && git diff --check` — passed.
+
+Independent review note: initial provider attempts failed before verdict, then focused `openai/gpt-5.5` review found valid blockers: parseable/delivery-shaped unknown `agent:*` session keys could receive `COORDINATION.md`, and the original realpath/stat/read path was not a pinned read. Both were fixed before commit review retry.
 
 ### Prompt Studio
 
@@ -209,7 +214,7 @@ Legend: `-` means patch-id equivalent in the new base; `+` means unique relative
 | `+`  | `f4c7d4c94214` | test: cover startup runtime dependency staging                                       | drop-or-prove      | Likely upstream/backport bugfix from old train; only port if targeted current-base test demonstrates gap.                                                       |
 | `+`  | `5ec987c64c86` | chore(release): bump stable 2026.4.25                                                | drop/release-train | Old upstream release-train/backport/CI/test/doc noise; new clean 2026.7.2 base supersedes this unless a focused regression proves otherwise.                    |
 | `+`  | `aa36ee670b76` | fix(gateway): stage startup plugin deps before load                                  | drop-or-prove      | Likely upstream/backport bugfix from old train; only port if targeted current-base test demonstrates gap.                                                       |
-| `+`  | `832e9bf951f2` | feat(hooks): add coordination.md bootstrap hook                                      | rework/decide      | Keep need only if standard bootstrap files cannot replace COORDINATION.md; avoid core hook unless cross-runtime/subagent proof passes.                          |
+| `+`  | `832e9bf951f2` | feat(hooks): add coordination.md bootstrap hook                                      | keep/rework        | Reworked as a narrow LibreClaw bundled hook for recognized top-level agent sessions only; skips unknown/subagent/ACP/cron keys and uses pinned workspace reads. |
 | `+`  | `53368998212d` | feat(prompt): add system prompt customization engine                                 | defer/drop         | Old Prompt Studio/systemPromptOverride architecture conflicts with 2026.7.2 prompt surfaces and removed config keys; Prompt Studio v2 requires separate design. |
 | `+`  | `8eae88d8e181` | feat(prompt): add system prompt preview endpoint                                     | defer/drop         | Old Prompt Studio/systemPromptOverride architecture conflicts with 2026.7.2 prompt surfaces and removed config keys; Prompt Studio v2 requires separate design. |
 | `+`  | `29c8abb90888` | feat(ui): add LibreClaw prompt studio                                                | defer/drop         | Old Prompt Studio/systemPromptOverride architecture conflicts with 2026.7.2 prompt surfaces and removed config keys; Prompt Studio v2 requires separate design. |
