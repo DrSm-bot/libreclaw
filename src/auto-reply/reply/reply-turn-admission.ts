@@ -260,7 +260,6 @@ async function admitReplyTurnWithWaitSignal(
           admittedSessionEntry &&
           ((admittedSessionEntry.status === "running" &&
             (admittedSessionEntry.abortedLastRun === true ||
-              admittedSessionEntry.restartRecoveryRuns !== undefined ||
               admittedSessionEntry.mainRestartRecovery !== undefined)) ||
             admittedSessionEntry.mainRestartRecovery?.tombstone !== undefined) &&
           isMainRestartRecoveryCandidate(admittedSessionEntry, params.sessionKey)

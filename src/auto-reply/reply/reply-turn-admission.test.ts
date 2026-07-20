@@ -455,6 +455,36 @@ describe("reply turn admission", () => {
     ).resolves.toEqual({ status: "skipped", reason: "lifecycle-invalidated" });
   });
 
+  it("admits a new turn when only an orphaned restart recovery fence remains", async () => {
+    const sessionKey = "agent:main:discord:channel:orphaned-recovery-fence";
+    const sessionId = "completed-session";
+    const storePath = createSessionStore({
+      [sessionKey]: {
+        sessionId,
+        updatedAt: 100,
+        status: "running",
+        abortedLastRun: false,
+        restartRecoveryRuns: [
+          { runId: "stale-run", lifecycleGeneration: "pre-restart-generation" },
+        ],
+      },
+    });
+
+    const admission = await admitReplyTurn({
+      sessionKey,
+      sessionId,
+      expectedSessionId: sessionId,
+      storePath,
+      kind: "visible",
+      resetTriggered: false,
+    });
+
+    expect(admission.status).toBe("owned");
+    if (admission.status === "owned") {
+      admission.operation.complete();
+    }
+  });
+
   it("schedules released recovery only after retained admission exits", async () => {
     const sourceSessionKey = "agent:main:telegram:slash:recovery-adoption";
     const sessionKey = "agent:main:telegram:topic:recovery-adoption";
