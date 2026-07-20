@@ -30,9 +30,18 @@ export type Gpt5PromptOverlayConfig = {
   personality?: "friendly" | "on" | "off";
 };
 
+export type OpenClawPromptOverlayConfig = {
+  /** Enable OpenClaw-owned custom prompt additions. Defaults to true when content is present. */
+  enabled?: boolean;
+  /** Operator-authored stable custom instructions inserted without replacing the generated prompt. */
+  customInstructions?: string;
+};
+
 export type PromptOverlaysConfig = {
   /** Shared GPT-5-family prompt overlay used across providers. */
   gpt5?: Gpt5PromptOverlayConfig;
+  /** OpenClaw-owned Prompt Studio v2 additions. */
+  openclaw?: OpenClawPromptOverlayConfig;
 };
 
 export type AgentModelEntryConfig = {

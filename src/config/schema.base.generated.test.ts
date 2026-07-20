@@ -130,6 +130,25 @@ describe("base config schema", () => {
     expect(uiHints["hooks.internal.handlers"]).toBeUndefined();
   });
 
+  it("includes Prompt Studio v2 openclaw overlay settings in the public schema payload", () => {
+    const openclawPromptOverlay = schemaAt(BASE_SCHEMA, [
+      "agents",
+      "defaults",
+      "promptOverlays",
+      "openclaw",
+    ]);
+    const customInstructions = schemaAt(BASE_SCHEMA, [
+      "agents",
+      "defaults",
+      "promptOverlays",
+      "openclaw",
+      "customInstructions",
+    ]);
+
+    expect(openclawPromptOverlay, "agents.defaults.promptOverlays.openclaw").toBeDefined();
+    expect(customInstructions?.type).toBe("string");
+  });
+
   it("includes generation and voice models in the public schema payload", () => {
     const agentDefaultsProperties = (
       BASE_CONFIG_SCHEMA.schema as {

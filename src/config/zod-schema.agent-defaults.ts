@@ -79,6 +79,13 @@ export const AgentDefaultsSchema = z
           })
           .strict()
           .optional(),
+        openclaw: z
+          .object({
+            enabled: z.boolean().optional(),
+            customInstructions: z.string().optional(),
+          })
+          .strict()
+          .optional(),
       })
       .strict()
       .optional(),
