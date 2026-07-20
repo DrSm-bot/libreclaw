@@ -47,10 +47,15 @@ async function stopAgentEventBridges(bridges: readonly AgentEventBridge[]): Prom
   }
 }
 
+type AssistantTextPayload = {
+  text: string;
+  delta?: string;
+};
+
 function createAssistantTextBridge(params: {
   runId: string;
   suppressed?: boolean;
-  deliver?: (text: string) => Promise<void>;
+  deliver?: (payload: AssistantTextPayload) => Promise<void>;
   startOrder?: AgentEventDeliveryStartOrder;
 }) {
   let lastText: string | undefined;
@@ -68,7 +73,12 @@ function createAssistantTextBridge(params: {
         return undefined;
       }
       lastText = text;
-      return text;
+      const delta =
+        typeof evt.data.delta === "string" && evt.data.delta ? evt.data.delta : undefined;
+      return {
+        text,
+        ...(delta ? { delta } : {}),
+      };
     },
   });
 }
@@ -422,7 +432,7 @@ type RunCliAgentWithLifecycleParams = {
    */
   onActivity?: () => void;
   preserveProgressCallbackStartOrder?: boolean;
-  onAssistantText?: (text: string) => Promise<void>;
+  onAssistantText?: (payload: AssistantTextPayload) => Promise<void>;
   onReasoningText?: (payload: ReasoningTextPayload) => Promise<void>;
   onReasoningProgress?: (payload: ReasoningProgressPayload) => Promise<void>;
   onToolEvent?: (payload: CliToolEventPayload) => Promise<void>;

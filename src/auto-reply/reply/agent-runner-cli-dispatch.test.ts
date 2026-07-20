@@ -330,7 +330,9 @@ describe("runCliAgentWithLifecycle", () => {
       return { payloads: [], meta: { durationMs: 1 } };
     });
     const onActivity = vi.fn();
-    const onAssistantText = vi.fn<(text: string) => Promise<void>>(async () => undefined);
+    const onAssistantText = vi.fn<(payload: { text: string; delta?: string }) => Promise<void>>(
+      async () => undefined,
+    );
     const onReasoningProgress = vi.fn<(payload: ReasoningProgressPayload) => Promise<void>>(
       async () => undefined,
     );
@@ -378,7 +380,9 @@ describe("runCliAgentWithLifecycle", () => {
       return { payloads: [{ text: "Visible answer" }], meta: { durationMs: 1 } };
     });
     const onActivity = vi.fn();
-    const onAssistantText = vi.fn<(text: string) => Promise<void>>(async () => undefined);
+    const onAssistantText = vi.fn<(payload: { text: string; delta?: string }) => Promise<void>>(
+      async () => undefined,
+    );
 
     await runCliAgentWithLifecycle({
       runId: "run-activity-assistant",

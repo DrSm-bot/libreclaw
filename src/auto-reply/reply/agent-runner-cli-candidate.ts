@@ -35,7 +35,10 @@ import { isReplyOperationRestartAbort } from "./reply-operation-abort.js";
 
 type CliPresentation = Pick<
   ReturnType<typeof createAgentTurnPresentation>,
-  "handlePartialForTyping" | "preparePartialForTyping" | "startPresentationWhileTyping"
+  | "handlePartialForTyping"
+  | "preparePartialForTyping"
+  | "startPresentationWhileTyping"
+  | "cliAssistantBlockReplyHandler"
 >;
 
 export async function runCliFallbackCandidate(params: {
@@ -118,6 +121,46 @@ export async function runCliFallbackCandidate(params: {
       await turn.opts?.onToolResult?.(payload);
     },
   });
+  let cliAssistantDeltaBuffer = "";
+  const flushCliAssistantDeltaBuffer = async (force = false): Promise<boolean> => {
+    const handler = params.presentation.cliAssistantBlockReplyHandler;
+    if (!handler || !cliAssistantDeltaBuffer.trim()) {
+      return false;
+    }
+    const minChars = 240;
+    const maxChars = 900;
+    if (!force && cliAssistantDeltaBuffer.length < minChars) {
+      return false;
+    }
+    const searchLimit = Math.min(cliAssistantDeltaBuffer.length, maxChars);
+    const searchable = cliAssistantDeltaBuffer.slice(0, searchLimit);
+    const sentenceCut = Math.max(
+      searchable.lastIndexOf(". "),
+      searchable.lastIndexOf("! "),
+      searchable.lastIndexOf("? "),
+      searchable.lastIndexOf("\n"),
+    );
+    let cutIndex: number;
+    if (sentenceCut >= minChars) {
+      const sentenceBreakChar = searchable[sentenceCut];
+      cutIndex = sentenceBreakChar === "\n" ? sentenceCut + 1 : sentenceCut + 2;
+    } else if (cliAssistantDeltaBuffer.length <= maxChars) {
+      if (!force && cliAssistantDeltaBuffer.length < maxChars) {
+        return false;
+      }
+      cutIndex = cliAssistantDeltaBuffer.length;
+    } else {
+      const whitespaceCut = searchable.lastIndexOf(" ");
+      cutIndex = whitespaceCut >= minChars ? whitespaceCut + 1 : maxChars;
+    }
+    const text = cliAssistantDeltaBuffer.slice(0, cutIndex);
+    cliAssistantDeltaBuffer = cliAssistantDeltaBuffer.slice(cutIndex);
+    if (!text.trim()) {
+      return true;
+    }
+    await handler({ text } as ReplyPayload);
+    return true;
+  };
   const result = await params.timing.measure("cli_run", () =>
     withLocalSessionPlacementTurnAdmission(
       {
@@ -137,7 +180,11 @@ export async function runCliFallbackCandidate(params: {
           suppressAssistantBridge: turn.followupRun.run.silentExpected,
           onActivity: () => turn.replyOperation?.recordActivity(),
           preserveProgressCallbackStartOrder: params.preserveProgressCallbackStartOrder,
-          onAssistantText: async (text) => {
+          onAssistantText: async ({ text, delta }) => {
+            if (delta) {
+              cliAssistantDeltaBuffer += delta;
+              while (await flushCliAssistantDeltaBuffer(false)) {}
+            }
             if (!params.preserveProgressCallbackStartOrder) {
               const textForTyping = await params.presentation.handlePartialForTyping({
                 text,
@@ -317,6 +364,7 @@ export async function runCliFallbackCandidate(params: {
         }),
     ),
   );
+  while (await flushCliAssistantDeltaBuffer(true)) {}
   if (droppedCliSessionReplacement) {
     await clearDroppedCliSessionBinding({
       provider: params.cliExecutionProvider,

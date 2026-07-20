@@ -24,6 +24,7 @@ type AgentTurnPresentation = {
     startPresentation: () => void | Promise<void>,
   ) => Promise<void>;
   blockReplyHandler: ReturnType<typeof createBlockReplyDeliveryHandler> | undefined;
+  cliAssistantBlockReplyHandler: ReturnType<typeof createBlockReplyDeliveryHandler> | undefined;
 };
 
 /** Builds the channel-presentation callbacks shared by CLI and embedded runs. */
@@ -105,25 +106,40 @@ export function createAgentTurnPresentation(params: {
   };
 
   const blockReplyPipeline = params.turn.blockReplyPipeline;
+  const createBlockReplyHandler = (options?: {
+    directTextBlockRepliesWhenStreamingDisabled?: boolean;
+    signalTextDeltas?: boolean;
+  }) =>
+    params.turn.opts?.onBlockReply
+      ? createBlockReplyDeliveryHandler({
+          onBlockReply: params.turn.opts.onBlockReply,
+          currentMessageId:
+            params.turn.sessionCtx.MessageSidFull ?? params.turn.sessionCtx.MessageSid,
+          replyThreading: params.turn.replyThreading,
+          normalizeStreamingText,
+          applyReplyToMode: params.turn.applyReplyToMode,
+          normalizeMediaPaths: params.replyMediaContext.normalizePayload,
+          typingSignals: params.turn.typingSignals,
+          reasoningPayloadsEnabled: params.turn.opts?.reasoningPayloadsEnabled,
+          commentaryPayloadsEnabled: params.turn.opts?.commentaryPayloadsEnabled,
+          directTextBlockRepliesWhenStreamingDisabled:
+            options?.directTextBlockRepliesWhenStreamingDisabled,
+          signalTextDeltas: options?.signalTextDeltas,
+          blockStreamingEnabled: params.turn.blockStreamingEnabled,
+          blockReplyPipeline,
+          directlySentBlockKeys: params.directlySentBlockKeys,
+          directlySentBlockPayloads: params.directlySentBlockPayloads,
+        })
+      : undefined;
   // One handler owns threading and direct-send dedupe for this fallback cycle.
-  const blockReplyHandler = params.turn.opts?.onBlockReply
-    ? createBlockReplyDeliveryHandler({
-        onBlockReply: params.turn.opts.onBlockReply,
-        currentMessageId:
-          params.turn.sessionCtx.MessageSidFull ?? params.turn.sessionCtx.MessageSid,
-        replyThreading: params.turn.replyThreading,
-        normalizeStreamingText,
-        applyReplyToMode: params.turn.applyReplyToMode,
-        normalizeMediaPaths: params.replyMediaContext.normalizePayload,
-        typingSignals: params.turn.typingSignals,
-        reasoningPayloadsEnabled: params.turn.opts?.reasoningPayloadsEnabled,
-        commentaryPayloadsEnabled: params.turn.opts?.commentaryPayloadsEnabled,
-        blockStreamingEnabled: params.turn.blockStreamingEnabled,
-        blockReplyPipeline,
-        directlySentBlockKeys: params.directlySentBlockKeys,
-        directlySentBlockPayloads: params.directlySentBlockPayloads,
-      })
-    : undefined;
+  const blockReplyHandler = createBlockReplyHandler();
+  const cliAssistantBlockReplyHandler =
+    params.turn.followupRun.run.sourceReplyDeliveryMode === "message_tool_only"
+      ? undefined
+      : createBlockReplyHandler({
+          directTextBlockRepliesWhenStreamingDisabled: true,
+          signalTextDeltas: false,
+        });
 
   return {
     normalizeStreamingText,
@@ -131,5 +147,6 @@ export function createAgentTurnPresentation(params: {
     handlePartialForTyping,
     startPresentationWhileTyping,
     blockReplyHandler,
+    cliAssistantBlockReplyHandler,
   };
 }

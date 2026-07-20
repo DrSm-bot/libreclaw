@@ -98,6 +98,8 @@ export function createBlockReplyDeliveryHandler(params: {
   typingSignals: TypingSignaler;
   reasoningPayloadsEnabled?: boolean;
   commentaryPayloadsEnabled?: boolean;
+  directTextBlockRepliesWhenStreamingDisabled?: boolean;
+  signalTextDeltas?: boolean;
   blockStreamingEnabled: boolean;
   blockReplyPipeline: BlockReplyPipeline | null;
   directlySentBlockKeys: Set<string>;
@@ -171,7 +173,7 @@ export function createBlockReplyDeliveryHandler(params: {
       return;
     }
 
-    if (blockPayload.text) {
+    if (blockPayload.text && params.signalTextDeltas !== false) {
       void params.typingSignals.signalTextDelta(blockPayload.text).catch((err: unknown) => {
         logVerbose(`block reply typing signal failed: ${String(err)}`);
       });
@@ -193,7 +195,8 @@ export function createBlockReplyDeliveryHandler(params: {
     } else if (
       blockHasNonTextContent ||
       blockPayload.isReasoning === true ||
-      blockPayload.isCommentary === true
+      blockPayload.isCommentary === true ||
+      params.directTextBlockRepliesWhenStreamingDisabled === true
     ) {
       // Enabled display lanes never merge into final text, so deliver them directly
       // even when block streaming is off.

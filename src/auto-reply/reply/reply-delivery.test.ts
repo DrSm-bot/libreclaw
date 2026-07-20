@@ -223,6 +223,44 @@ describe("createBlockReplyDeliveryHandler", () => {
     expect(onBlockReply).not.toHaveBeenCalled();
   });
 
+  it("can directly send text-only block replies when streaming is disabled", async () => {
+    const onBlockReply = vi.fn(async () => {});
+    const directlySentBlockKeys = new Set<string>();
+    const directlySentBlockPayloads: ReplyPayload[] = [];
+    const typingSignals = {
+      signalTextDelta: vi.fn(async () => {}),
+    } as unknown as TypingSignaler;
+
+    const handler = createBlockReplyDeliveryHandler({
+      onBlockReply,
+      normalizeStreamingText: (payload) => ({ text: payload.text, skip: false }),
+      applyReplyToMode: (payload) => payload,
+      typingSignals,
+      signalTextDeltas: false,
+      directTextBlockRepliesWhenStreamingDisabled: true,
+      blockStreamingEnabled: false,
+      blockReplyPipeline: null,
+      directlySentBlockKeys,
+      directlySentBlockPayloads,
+    });
+
+    await handler({ text: "text only" });
+
+    const expectedPayload = {
+      text: "text only",
+      mediaUrl: undefined,
+      mediaUrls: undefined,
+      replyToId: undefined,
+      replyToCurrent: undefined,
+      replyToTag: undefined,
+      audioAsVoice: false,
+    };
+    expect(onBlockReply).toHaveBeenCalledWith(expectedPayload);
+    expect(directlySentBlockKeys).toEqual(new Set([createBlockReplyContentKey(expectedPayload)]));
+    expect(directlySentBlockPayloads).toEqual([expectedPayload]);
+    expect(typingSignals.signalTextDelta).not.toHaveBeenCalled();
+  });
+
   it("trims leading whitespace in block-streamed replies", async () => {
     const blockReplyPipeline = {
       enqueue: vi.fn(),

@@ -1449,6 +1449,76 @@ describe("buildReplyPayloads media filter integration", () => {
     });
   });
 
+  it("drops final text already covered by direct text blocks when streaming is disabled", async () => {
+    const { replyPayloads } = await buildReplyPayloads({
+      ...baseParams,
+      blockStreamingEnabled: false,
+      directlySentBlockPayloads: [{ text: "Hello" }, { text: " world" }],
+      payloads: [{ text: "Hello world" }],
+    });
+
+    expect(replyPayloads).toHaveLength(0);
+  });
+
+  it("preserves final text when direct text blocks only covered a prefix", async () => {
+    const { createBlockReplyContentKey } = await import("./block-reply-pipeline.js");
+    const { replyPayloads } = await buildReplyPayloads({
+      ...baseParams,
+      blockStreamingEnabled: false,
+      directlySentBlockKeys: new Set([createBlockReplyContentKey({ text: "Hello" })]),
+      directlySentBlockPayloads: [{ text: "Hello" }],
+      payloads: [{ text: "Hello world" }],
+    });
+
+    expect(replyPayloads).toHaveLength(1);
+    expectFields(replyPayloads[0], { text: "Hello world" });
+  });
+
+  it("preserves unsent sibling payloads after direct text block dedupe", async () => {
+    const { replyPayloads } = await buildReplyPayloads({
+      ...baseParams,
+      blockStreamingEnabled: false,
+      directlySentBlockPayloads: [{ text: "Hello world" }],
+      payloads: [{ text: "Hello world" }, { text: "Second payload" }],
+    });
+
+    expect(replyPayloads).toHaveLength(1);
+    expectFields(replyPayloads[0], { text: "Second payload" });
+  });
+
+  it("preserves rich final payloads after text-only direct block sends", async () => {
+    const presentation = {
+      blocks: [{ type: "buttons" as const, buttons: [{ label: "Go", value: "go" }] }],
+    };
+    const { replyPayloads } = await buildReplyPayloads({
+      ...baseParams,
+      blockStreamingEnabled: false,
+      directlySentBlockPayloads: [{ text: "Hello" }],
+      payloads: [{ text: "Hello", presentation }],
+    });
+
+    expect(replyPayloads).toHaveLength(1);
+    expectFields(replyPayloads[0], { text: "Hello", presentation });
+  });
+
+  it("does not suppress matching direct block keys across assistant messages", async () => {
+    const { createBlockReplyContentKey } = await import("./block-reply-pipeline.js");
+    const sentPayload = setReplyPayloadMetadata({ text: "same" }, { assistantMessageIndex: 1 });
+    const finalPayload = setReplyPayloadMetadata({ text: "same" }, { assistantMessageIndex: 2 });
+    const { replyPayloads } = await buildReplyPayloads({
+      ...baseParams,
+      blockStreamingEnabled: false,
+      directlySentBlockKeys: new Set([createBlockReplyContentKey(sentPayload)]),
+      directlySentBlockPayloads: [sentPayload],
+      payloads: [finalPayload],
+    });
+
+    expect(replyPayloads).toHaveLength(1);
+    const replyPayload = expectDefined(replyPayloads[0], "replyPayload");
+    expectFields(replyPayload, { text: "same" });
+    expect(getReplyPayloadMetadata(replyPayload)).toMatchObject({ assistantMessageIndex: 2 });
+  });
+
   it("preserves final text when internal whitespace changed", async () => {
     const directlySentBlockPayloads = [
       setReplyPayloadMetadata({ text: "constx=1" }, { assistantMessageIndex: 1 }),

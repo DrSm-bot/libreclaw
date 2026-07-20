@@ -55,8 +55,8 @@ Codex CLI `gpt-5.6-sol` with high reasoning returned `VERDICT: revise` for the u
 - drop-or-prove: 36
 - drop/product: 10
 - drop/release-train: 70
-- keep/rework: 1
-- prove-before-port: 4
+- keep/rework: 4
+- prove-before-port: 1
 - rework-if-needed: 1
 - rework-later: 4
 - rework/decide: 2
@@ -95,15 +95,18 @@ Disposition: `defer/drop` for old implementation.
 
 The old `systemPromptOverride`-based implementation must not be ported. 2026.7.2 removed those legacy keys and current prompt surfaces differ across embedded, native Codex, CLI/ACP, compaction, reports, preview, and provider-specific GPT-5 overlays. Treat Prompt Studio v2 as a separate design project after the base upgrade is healthy.
 
-### Runtime patches to prove before porting
+### Runtime patches proved before porting
 
-Disposition: `prove-before-port`.
+Initial disposition: `prove-before-port`. Current outcomes:
 
-- Streamed visible channel delivery (`0f1911b`, `5ce35a9`, `0affcc6`).
-- Generic wake/system-event prompt inclusion (`0ab1daf`).
-- ACP/native Codex runtime glue mentioned in memory but not blindly identified from this patch-id pass.
+- Streamed visible channel delivery (`0f1911b`, `5ce35a9`, `0affcc6`): `keep/rework`. Current upstream already bridges CLI assistant events to `onPartialReply` live previews, but it did not deliver CLI assistant deltas to normal source-channel block replies when block streaming was off. Reworked onto the current agent-event bridge architecture instead of cherry-picking old `RunCliAgentParams.onAssistantDelta` commits. Focused coverage now proves buffered CLI assistant deltas reach `onBlockReply`, direct text-only block delivery is explicitly opted in, and final payloads covered by direct block sends are suppressed/deduped.
+- Generic wake/system-event prompt inclusion (`0ab1daf`): no code port after proof. Current upstream centrally drains generic system events into prepared prompts; targeted validation passed.
+- ACP/native Codex runtime glue mentioned in memory: no port without a focused failing proof. Current upstream already has extensive ACP/native Codex runtime surfaces.
 
-For these, inspect current upstream source/tests and run focused live or unit smoke before deciding.
+Validation for the visible-delivery slice:
+
+- `node scripts/run-vitest.mjs run src/auto-reply/reply/agent-runner-execution-cli-progress.test.ts src/auto-reply/reply/agent-runner-execution-cli-block-replies.test.ts src/auto-reply/reply/agent-runner-cli-dispatch.test.ts src/auto-reply/reply/reply-delivery.test.ts src/auto-reply/reply/agent-runner-payloads.test.ts` — passed, 5 files / 131 tests.
+- `node scripts/run-tsgo.mjs -p tsconfig.core.json --incremental --tsBuildInfoFile .artifacts/tsgo-cache/core.tsbuildinfo && node scripts/run-tsgo.mjs -p test/tsconfig/tsconfig.core.test.json --incremental --tsBuildInfoFile .artifacts/tsgo-cache/core-test.tsbuildinfo` — passed.
 
 ## Complete patch-id ledger vs 2026.7.2
 
@@ -212,8 +215,8 @@ Legend: `-` means patch-id equivalent in the new base; `+` means unique relative
 | `+`  | `29c8abb90888` | feat(ui): add LibreClaw prompt studio                                                | defer/drop         | Old Prompt Studio/systemPromptOverride architecture conflicts with 2026.7.2 prompt surfaces and removed config keys; Prompt Studio v2 requires separate design. |
 | `+`  | `9eae22a2b63f` | docs(prompt): document Prompt Studio customization                                   | defer/drop         | Old Prompt Studio/systemPromptOverride architecture conflicts with 2026.7.2 prompt surfaces and removed config keys; Prompt Studio v2 requires separate design. |
 | `+`  | `7c6d89d1c2ca` | fix(ui): show recent session identifiers plainly                                     | drop-or-prove      | Likely upstream/backport bugfix from old train; only port if targeted current-base test demonstrates gap.                                                       |
-| `+`  | `0f1911b7029f` | fix(cli): deliver claude stream deltas to channels                                   | prove-before-port  | Visible streamed channel delivery patch; inspect current upstream behavior/tests before deciding. Do not assume needed.                                         |
-| `+`  | `5ce35a90e677` | fix(cli): harden streamed delta delivery                                             | prove-before-port  | Visible streamed channel delivery patch; inspect current upstream behavior/tests before deciding. Do not assume needed.                                         |
+| `+`  | `0f1911b7029f` | fix(cli): deliver claude stream deltas to channels                                   | keep/rework        | Reworked onto current agent-event bridge architecture: CLI deltas buffer into source-channel block replies and mark final payloads for dedupe.                  |
+| `+`  | `5ce35a90e677` | fix(cli): harden streamed delta delivery                                             | keep/rework        | Current bridge already serializes/drains deliveries; kept the behavior via existing agent-event bridge drain rather than old promise-chain code.                |
 | `+`  | `42d91a155e7a` | test: satisfy strict type checks                                                     | drop-or-prove      | Likely upstream/backport bugfix from old train; only port if targeted current-base test demonstrates gap.                                                       |
 | `+`  | `cf0ae813f022` | style: satisfy hook lint rules                                                       | rework-if-needed   | Style-only follow-up tied to the old hook/prompt port; only relevant if a new hook is implemented.                                                              |
 | `+`  | `ea2a2ef78a20` | test: align coordination hook and prompt studio settings                             | drop-or-prove      | Likely upstream/backport bugfix from old train; only port if targeted current-base test demonstrates gap.                                                       |
@@ -252,7 +255,7 @@ Legend: `-` means patch-id equivalent in the new base; `+` means unique relative
 | `+`  | `f04beebf328e` | docs: refresh LibreClaw 2026.5.4 notes                                               | rework-later       | Docs/branding only after carried features are final; preserve OpenClaw package/config/update identity.                                                          |
 | `+`  | `26e54c9cf5e9` | fix(prompt): include safety style in cache key                                       | defer/drop         | Old Prompt Studio/systemPromptOverride architecture conflicts with 2026.7.2 prompt surfaces and removed config keys; Prompt Studio v2 requires separate design. |
 | `+`  | `e1311112ceef` | fix(prompt-studio): align with 2026.5.4 API types                                    | defer/drop         | Old Prompt Studio/systemPromptOverride architecture conflicts with 2026.7.2 prompt surfaces and removed config keys; Prompt Studio v2 requires separate design. |
-| `+`  | `0affcc6ad160` | fix(cli): deliver streamed assistant deltas to channels                              | prove-before-port  | Visible streamed channel delivery patch; inspect current upstream behavior/tests before deciding. Do not assume needed.                                         |
+| `+`  | `0affcc6ad160` | fix(cli): deliver streamed assistant deltas to channels                              | keep/rework        | Reworked direct visible channel delivery for current CLI assistant events; do not cherry-pick old `onAssistantDelta` API shape.                                 |
 | `+`  | `38930f3af14f` | chore: roll forward LibreClaw to OpenClaw 2026.5.28                                  | drop-or-prove      | Likely upstream/backport bugfix from old train; only port if targeted current-base test demonstrates gap.                                                       |
 | `+`  | `25202be4aac6` | chore: roll forward LibreClaw to OpenClaw 2026.6.9                                   | drop-or-prove      | Likely upstream/backport bugfix from old train; only port if targeted current-base test demonstrates gap.                                                       |
 | `+`  | `d2c0468bb5ee` | fix(ui): expose LibreClaw prompt studio in sidebar                                   | defer/drop         | Old Prompt Studio/systemPromptOverride architecture conflicts with 2026.7.2 prompt surfaces and removed config keys; Prompt Studio v2 requires separate design. |
