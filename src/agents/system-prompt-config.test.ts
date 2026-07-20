@@ -77,4 +77,81 @@ describe("buildConfiguredAgentSystemPrompt", () => {
     expect(prompt).toContain("## Sub-Agent Delegation");
     expect(prompt).toContain("Mode: prefer");
   });
+  it("adds Prompt Studio v2 custom instructions through prompt overlays", () => {
+    const prompt = buildConfiguredAgentSystemPrompt({
+      config: {
+        agents: {
+          defaults: {
+            promptOverlays: {
+              openclaw: {
+                customInstructions: "Prefer crisp incident-report style updates.",
+              },
+            },
+          },
+        },
+      },
+      agentId: "main",
+      workspaceDir: "/tmp/openclaw",
+      toolNames: [],
+    });
+
+    expect(prompt).toContain("## Custom Instructions");
+    expect(prompt).toContain("Prefer crisp incident-report style updates.");
+    expect(prompt).toContain("## Safety");
+  });
+
+  it("can disable Prompt Studio v2 custom instructions without removing provider overlays", () => {
+    const prompt = buildConfiguredAgentSystemPrompt({
+      config: {
+        agents: {
+          defaults: {
+            promptOverlays: {
+              openclaw: {
+                enabled: false,
+                customInstructions: "Should not render.",
+              },
+            },
+          },
+        },
+      },
+      agentId: "main",
+      workspaceDir: "/tmp/openclaw",
+      toolNames: [],
+      promptContribution: {
+        stablePrefix: "## Provider Overlay\nProvider-owned guidance.",
+      },
+    });
+
+    expect(prompt).toContain("## Provider Overlay");
+    expect(prompt).toContain("Provider-owned guidance.");
+    expect(prompt).not.toContain("Should not render.");
+  });
+
+  it("merges Prompt Studio v2 custom instructions after provider-owned prompt guidance", () => {
+    const prompt = buildConfiguredAgentSystemPrompt({
+      config: {
+        agents: {
+          defaults: {
+            promptOverlays: {
+              openclaw: {
+                customInstructions: "Operator-owned guidance.",
+              },
+            },
+          },
+        },
+      },
+      agentId: "main",
+      workspaceDir: "/tmp/openclaw",
+      toolNames: [],
+      promptContribution: {
+        stablePrefix: "## Provider Overlay\nProvider-owned guidance.",
+      },
+    });
+
+    expect(prompt.indexOf("## Provider Overlay")).toBeLessThan(
+      prompt.indexOf("## Custom Instructions"),
+    );
+    expect(prompt).toContain("Provider-owned guidance.");
+    expect(prompt).toContain("Operator-owned guidance.");
+  });
 });

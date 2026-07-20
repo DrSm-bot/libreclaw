@@ -9,6 +9,10 @@ import { buildTtsSystemPromptHint } from "../tts/tts-settings.js";
 import { resolveAgentConfig } from "./agent-scope.js";
 import { buildModelAliasLines } from "./model-alias-lines.js";
 import { resolveOwnerDisplaySetting } from "./owner-display.js";
+import {
+  mergeSystemPromptContributions,
+  resolveSystemPromptStudioContribution,
+} from "./system-prompt-studio.js";
 import { buildAgentSystemPrompt } from "./system-prompt.js";
 import { resolveEffectiveToolFsWorkspaceOnly } from "./tool-fs-policy.js";
 
@@ -58,8 +62,15 @@ function resolveAgentSystemPromptConfig(params: {
 export function buildConfiguredAgentSystemPrompt(params: ConfiguredAgentSystemPromptParams) {
   const { config, agentId, ...renderParams } = params;
   const configParams = config ? resolveAgentSystemPromptConfig({ config, agentId }) : {};
+  const promptContribution = mergeSystemPromptContributions({
+    base: renderParams.promptContribution,
+    studio: resolveSystemPromptStudioContribution(
+      config?.agents?.defaults?.promptOverlays?.openclaw,
+    ),
+  });
   return buildAgentSystemPrompt({
     ...renderParams,
     ...configParams,
+    promptContribution,
   });
 }
