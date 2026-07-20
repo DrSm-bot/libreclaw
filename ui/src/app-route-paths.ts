@@ -14,6 +14,7 @@ const APP_ROUTE_DEFINITIONS = {
   mcp: { path: "/settings/mcp", aliases: ["/mcp"] },
   infrastructure: { path: "/settings/infrastructure", aliases: ["/infrastructure"] },
   "ai-agents": { path: "/settings/ai-agents", aliases: ["/ai-agents"] },
+  "prompt-studio": { path: "/settings/prompt-studio", aliases: ["/prompt-studio"] },
   workboard: { path: "/workboard" },
   worktrees: { path: "/settings/worktrees", aliases: ["/worktrees"] },
   instances: { path: "/instances" },

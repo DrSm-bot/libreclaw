@@ -41,6 +41,7 @@ const SETTINGS_ROUTE_PATHS = [
   },
   { routeId: "worktrees", path: "/settings/worktrees", alias: "/worktrees" },
   { routeId: "ai-agents", path: "/settings/ai-agents", alias: "/ai-agents" },
+  { routeId: "prompt-studio", path: "/settings/prompt-studio", alias: "/prompt-studio" },
 ] as const satisfies readonly { routeId: RouteId; path: string; alias: string }[];
 
 const leadingSlashNormalizerCases = [
@@ -76,6 +77,7 @@ describe("navigationIconForRoute", () => {
       mcp: "wrench",
       infrastructure: "globe",
       "ai-agents": "brain",
+      "prompt-studio": "scrollText",
       debug: "bug",
       logs: "scrollText",
     });
@@ -116,6 +118,7 @@ describe("titleForRoute", () => {
       mcp: "MCP",
       infrastructure: "Infrastructure",
       "ai-agents": "AI & Agents",
+      "prompt-studio": "Prompt Studio",
       debug: "Debug",
       logs: "Logs",
     });
@@ -150,6 +153,7 @@ describe("subtitleForRoute", () => {
       mcp: "MCP servers, auth, tools, and diagnostics.",
       infrastructure: "Gateway, web, browser, and media settings.",
       "ai-agents": "Agents, models, skills, tools, memory, session.",
+      "prompt-studio": "Customize the operator-owned system prompt overlay.",
       debug: "Snapshots, events, RPC.",
       logs: "Live gateway logs.",
     });
@@ -344,6 +348,7 @@ describe("SIDEBAR_NAV_ROUTES", () => {
       "infrastructure",
       "worktrees",
       "ai-agents",
+      "prompt-studio",
       "debug",
       "logs",
     ]);

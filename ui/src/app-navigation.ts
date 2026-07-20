@@ -72,6 +72,7 @@ export const SETTINGS_NAVIGATION_ROUTES = [
   "infrastructure",
   "worktrees",
   "ai-agents",
+  "prompt-studio",
   "debug",
   "logs",
 ] as const satisfies readonly NavigationRouteId[];
@@ -99,6 +100,7 @@ const NAVIGATION_ICONS: NavigationItem = {
   mcp: "wrench",
   infrastructure: "globe",
   "ai-agents": "brain",
+  "prompt-studio": "scrollText",
   debug: "bug",
   logs: "scrollText",
   dreams: "moon",
@@ -190,6 +192,7 @@ const NAVIGATION_COPY: Record<NavigationRouteId, { titleKey: string; subtitleKey
   mcp: { titleKey: "tabs.mcp", subtitleKey: "subtitles.mcp" },
   infrastructure: { titleKey: "tabs.infrastructure", subtitleKey: "subtitles.infrastructure" },
   "ai-agents": { titleKey: "tabs.aiAgents", subtitleKey: "subtitles.aiAgents" },
+  "prompt-studio": { titleKey: "tabs.promptStudio", subtitleKey: "subtitles.promptStudio" },
   debug: { titleKey: "tabs.debug", subtitleKey: "subtitles.debug" },
   logs: { titleKey: "tabs.logs", subtitleKey: "subtitles.logs" },
   dreams: { titleKey: "tabs.dreams", subtitleKey: "subtitles.dreams" },
