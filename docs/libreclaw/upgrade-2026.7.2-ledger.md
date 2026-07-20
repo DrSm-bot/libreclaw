@@ -17,11 +17,14 @@ Created: 2026-07-19
 - Integration branch: `upgrade/v2026.7.2-libreclaw`
 - Upstream base: `upstream/release/2026.7.2`
 - Base SHA: `3201a91b3b807771db5d2e2b09455a4a652dc7d9`
-- Upstream ref SHA at freeze: `3201a91b3b807771db5d2e2b09455a4a652dc7d9`
+- Upstream ref SHA at initial freeze: `3201a91b3b807771db5d2e2b09455a4a652dc7d9`
+- Upstream ref SHA at final PR packaging sync: `7f4d3bff1938a7d48215a7871b856a6f8472c587`
 - Package version: `openclaw 2026.7.2-beta.4`
 - Local worktree: separate clean checkout; operator-specific path intentionally omitted from docs.
 
 This branch intentionally starts from a clean upstream release foundation. Do not rebase or cherry-pick the previous LibreClaw stack wholesale.
+
+Final packaging note: after PR #89 was opened, GitHub reported the branch as conflicting because `blueworkslabs/libreclaw:main` was the older LibreClaw line while this branch was rebuilt from the clean 2026.7.2 upstream release. The final PR branch therefore contains an `ours` ancestry-bridge merge from `origin/main` that records old-main ancestry while preserving the reviewed 2026.7.2 tree. It also merges the latest upstream `release/2026.7.2` fixes through `7f4d3bff1938a7d48215a7871b856a6f8472c587`.
 
 ## Baseline smoke before downstream code
 
