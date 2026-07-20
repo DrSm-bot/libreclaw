@@ -66,6 +66,25 @@ async function readCoordinationFile(workspaceDir: string): Promise<WorkspaceBoot
   }
 }
 
+async function hasCoordinationFile(
+  bootstrapFiles: WorkspaceBootstrapFile[],
+  coordinationPath: string,
+): Promise<boolean> {
+  for (const file of bootstrapFiles) {
+    if (file.path === coordinationPath) {
+      return true;
+    }
+    try {
+      if ((await fsSync.promises.realpath(file.path)) === coordinationPath) {
+        return true;
+      }
+    } catch {
+      // Ignore missing or inaccessible bootstrap paths; they cannot identify this open file.
+    }
+  }
+  return false;
+}
+
 const coordinationMdHook = async (event: InternalHookEvent) => {
   if (!isAgentBootstrapEvent(event)) {
     return;
@@ -83,7 +102,7 @@ const coordinationMdHook = async (event: InternalHookEvent) => {
     if (!coordinationFile) {
       return;
     }
-    if (context.bootstrapFiles.some((file) => file.path === coordinationFile.path)) {
+    if (await hasCoordinationFile(context.bootstrapFiles, coordinationFile.path)) {
       return;
     }
     context.bootstrapFiles = [...context.bootstrapFiles, coordinationFile];

@@ -163,4 +163,30 @@ describe("coordination-md hook", () => {
 
     expect(context.bootstrapFiles.filter(isCoordinationFile)).toHaveLength(1);
   });
+
+  it("deduplicates COORDINATION.md when the workspace path is a symlink", async () => {
+    const realWorkspace = await makeTempWorkspace("openclaw-coordination-md-real-");
+    const symlinkParent = await makeTempWorkspace("openclaw-coordination-md-link-parent-");
+    const symlinkWorkspace = path.join(symlinkParent, "workspace");
+    await fs.symlink(realWorkspace, symlinkWorkspace, "dir");
+    const coordinationPath = path.join(realWorkspace, "COORDINATION.md");
+    await fs.writeFile(coordinationPath, "shared plan", "utf-8");
+    const context = await createBootstrapContext({
+      workspaceDir: symlinkWorkspace,
+      cfg: createCoordinationConfig(),
+      sessionKey: "agent:codex:discord:channel:123",
+      rootFiles: [{ name: "AGENTS.md", content: "root agents" }],
+    });
+    context.bootstrapFiles.push({
+      name: "COORDINATION.md" as AgentBootstrapHookContext["bootstrapFiles"][number]["name"],
+      path: path.join(symlinkWorkspace, "COORDINATION.md"),
+      content: "shared plan",
+      missing: false,
+    });
+
+    const event = createHookEvent("agent", "bootstrap", "agent:codex:discord:channel:123", context);
+    await handler(event);
+
+    expect(context.bootstrapFiles.filter(isCoordinationFile)).toHaveLength(1);
+  });
 });

@@ -122,9 +122,14 @@ export async function runCliFallbackCandidate(params: {
     },
   });
   let cliAssistantDeltaBuffer = "";
+  const hasLegacyMediaDirectiveLine = (text: string) => /(?:^|\n)\s*MEDIA:/iu.test(text);
   const flushCliAssistantDeltaBuffer = async (force = false): Promise<boolean> => {
     const handler = params.presentation.cliAssistantBlockReplyHandler;
     if (!handler || !cliAssistantDeltaBuffer.trim()) {
+      return false;
+    }
+    if (hasLegacyMediaDirectiveLine(cliAssistantDeltaBuffer)) {
+      cliAssistantDeltaBuffer = "";
       return false;
     }
     const minChars = 240;
@@ -156,6 +161,9 @@ export async function runCliFallbackCandidate(params: {
     const text = cliAssistantDeltaBuffer.slice(0, cutIndex);
     cliAssistantDeltaBuffer = cliAssistantDeltaBuffer.slice(cutIndex);
     if (!text.trim()) {
+      return true;
+    }
+    if (hasLegacyMediaDirectiveLine(text)) {
       return true;
     }
     await handler({ text } as ReplyPayload);

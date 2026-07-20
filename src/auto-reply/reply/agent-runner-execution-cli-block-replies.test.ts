@@ -170,6 +170,80 @@ describe("runAgentTurnWithFallback: CLI source-channel block replies", () => {
     expect(blockTexts.join("")).toBe(longText);
   });
 
+  it("does not direct-send CLI assistant chunks containing legacy media directives", async () => {
+    state.isCliProviderMock.mockReturnValue(true);
+    state.createBlockReplyDeliveryHandlerMock.mockImplementation(
+      (params: {
+        onBlockReply: NonNullable<GetReplyOptions["onBlockReply"]>;
+        directTextBlockRepliesWhenStreamingDisabled?: boolean;
+        directlySentBlockKeys?: Set<string>;
+        directlySentBlockPayloads?: Array<{ text?: string }>;
+      }) =>
+        async (payload: { text?: string }) => {
+          if (!params.directTextBlockRepliesWhenStreamingDisabled) {
+            return;
+          }
+          await params.onBlockReply(payload);
+          if (payload.text) {
+            params.directlySentBlockKeys?.add(createBlockReplyContentKey(payload));
+            params.directlySentBlockPayloads?.push(payload);
+          }
+        },
+    );
+    state.runWithModelFallbackMock.mockImplementationOnce(async (params: FallbackRunnerParams) => ({
+      result: await params.run("claude-cli", "claude-opus-4-6"),
+      provider: "claude-cli",
+      model: "claude-opus-4-6",
+      attempts: [],
+    }));
+    const finalText = "Here it is\n\nMEDIA:/tmp/a.png";
+    state.runCliAgentMock.mockImplementationOnce(async (params: { runId: string }) => {
+      const realAgentEvents = await vi.importActual<typeof import("../../infra/agent-events.js")>(
+        "../../infra/agent-events.js",
+      );
+      realAgentEvents.emitAgentEvent({
+        runId: params.runId,
+        stream: "assistant",
+        data: { text: finalText, delta: finalText },
+      });
+      return { payloads: [{ text: finalText }], meta: {} };
+    });
+
+    const onBlockReply = vi.fn<NonNullable<GetReplyOptions["onBlockReply"]>>(async () => undefined);
+    const runAgentTurnWithFallback = await getRunAgentTurnWithFallback();
+    const followupRun = createFollowupRun();
+    followupRun.run.provider = "claude-cli";
+    followupRun.run.model = "claude-opus-4-6";
+
+    const result = await runAgentTurnWithFallback({
+      commandBody: "hi",
+      followupRun,
+      sessionCtx: {
+        Provider: "discord",
+        ChatType: "channel",
+        MessageSid: "msg",
+      } as unknown as TemplateContext,
+      opts: { onBlockReply },
+      typingSignals: createMockTypingSignaler(),
+      blockReplyPipeline: null,
+      blockStreamingEnabled: false,
+      resolvedBlockStreamingBreak: "message_end",
+      applyReplyToMode: (payload) => payload,
+      shouldEmitToolResult: () => true,
+      shouldEmitToolOutput: () => false,
+      pendingToolTasks: new Set(),
+      resetSessionAfterRoleOrderingConflict: async () => false,
+      isHeartbeat: false,
+      sessionKey: "main",
+      getActiveSessionEntry: () => undefined,
+      resolvedVerboseLevel: "off",
+    });
+
+    expect(onBlockReply).not.toHaveBeenCalled();
+    expect(result.kind).toBe("success");
+    expect(result.kind === "success" ? result.directlySentBlockPayloads : undefined).toEqual([]);
+  });
+
   it("does not bridge CLI assistant deltas into source-channel block replies in message-tool-only mode", async () => {
     state.isCliProviderMock.mockReturnValue(true);
     state.createBlockReplyDeliveryHandlerMock.mockImplementation(

@@ -104,13 +104,13 @@ The old `systemPromptOverride`-based implementation must not be ported. 2026.7.2
 
 Initial disposition: `prove-before-port`. Current outcomes:
 
-- Streamed visible channel delivery (`0f1911b`, `5ce35a9`, `0affcc6`): `keep/rework`. Current upstream already bridges CLI assistant events to `onPartialReply` live previews, but it did not deliver CLI assistant deltas to normal source-channel block replies when block streaming was off. Reworked onto the current agent-event bridge architecture instead of cherry-picking old `RunCliAgentParams.onAssistantDelta` commits. Focused coverage now proves buffered CLI assistant deltas reach `onBlockReply`, direct text-only block delivery is explicitly opted in, and final payloads covered by direct block sends are suppressed/deduped.
+- Streamed visible channel delivery (`0f1911b`, `5ce35a9`, `0affcc6`): `keep/rework`. Current upstream already bridges CLI assistant events to `onPartialReply` live previews, but it did not deliver CLI assistant deltas to normal source-channel block replies when block streaming was off. Reworked onto the current agent-event bridge architecture instead of cherry-picking old `RunCliAgentParams.onAssistantDelta` commits. Focused coverage now proves buffered CLI assistant deltas reach `onBlockReply`, direct text-only block delivery is explicitly opted in, final payloads covered by direct block sends are suppressed/deduped, and legacy `MEDIA:` directive chunks remain owned by final payload parsing instead of raw direct sends.
 - Generic wake/system-event prompt inclusion (`0ab1daf`): no code port after proof. Current upstream centrally drains generic system events into prepared prompts; targeted validation passed.
 - ACP/native Codex runtime glue mentioned in memory: no port without a focused failing proof. Current upstream already has extensive ACP/native Codex runtime surfaces.
 
 Validation for the visible-delivery slice:
 
-- `node scripts/run-vitest.mjs run src/auto-reply/reply/agent-runner-execution-cli-progress.test.ts src/auto-reply/reply/agent-runner-execution-cli-block-replies.test.ts src/auto-reply/reply/agent-runner-cli-dispatch.test.ts src/auto-reply/reply/reply-delivery.test.ts src/auto-reply/reply/agent-runner-payloads.test.ts` — passed, 5 files / 131 tests.
+- `node scripts/run-vitest.mjs run src/auto-reply/reply/agent-runner-execution-cli-progress.test.ts src/auto-reply/reply/agent-runner-execution-cli-block-replies.test.ts src/auto-reply/reply/agent-runner-cli-dispatch.test.ts src/auto-reply/reply/reply-delivery.test.ts src/auto-reply/reply/agent-runner-payloads.test.ts` — passed, 5 files / 132 tests.
 - `node scripts/run-tsgo.mjs -p tsconfig.core.json --incremental --tsBuildInfoFile .artifacts/tsgo-cache/core.tsbuildinfo && node scripts/run-tsgo.mjs -p test/tsconfig/tsconfig.core.test.json --incremental --tsBuildInfoFile .artifacts/tsgo-cache/core-test.tsbuildinfo` — passed.
 
 ## Complete patch-id ledger vs 2026.7.2
