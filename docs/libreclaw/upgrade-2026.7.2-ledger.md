@@ -33,7 +33,7 @@ Run on the clean base worktree before adding LibreClaw changes:
 - `pnpm test:bundled` — passed, 2 files / 191 tests.
 - `pnpm build` — passed, total 7m19.9s; slowest phase `tsdown-unified` 6m10s.
 
-Build caveat: the upstream build regenerated `extensions/browser/chrome-extension/modules/copilot-runtime.js` and `.openclaw-build-root-help/`; those generated outputs were reverted/removed after the baseline run so the integration tree is clean.
+Build caveat: the clean upstream baseline build regenerated `extensions/browser/chrome-extension/modules/copilot-runtime.js` and `.openclaw-build-root-help/`; those outputs were reverted/removed after the baseline run. The later visible-delivery work intentionally keeps a refreshed `copilot-runtime.js` bundle because the current generated browser runtime needs the gateway client's `onSent` request callback. Provenance check: rerunning `node extensions/browser/scripts/build-copilot-runtime.mjs` after the source changes produced no additional diff.
 
 ## Sol/high plan review requirements incorporated
 
@@ -111,6 +111,8 @@ Initial disposition: `prove-before-port`. Current outcomes:
 Validation for the visible-delivery slice:
 
 - `node scripts/run-vitest.mjs run src/auto-reply/reply/agent-runner-execution-cli-progress.test.ts src/auto-reply/reply/agent-runner-execution-cli-block-replies.test.ts src/auto-reply/reply/agent-runner-cli-dispatch.test.ts src/auto-reply/reply/reply-delivery.test.ts src/auto-reply/reply/agent-runner-payloads.test.ts` — passed, 5 files / 133 tests.
+- `node scripts/run-vitest.mjs run src/hooks/bundled/coordination-md/handler.test.ts src/hooks/bundled/bootstrap-extra-files/handler.test.ts src/agents/bootstrap-hooks.test.ts src/agents/bootstrap-files.test.ts src/auto-reply/reply/agent-runner-execution-cli-progress.test.ts src/auto-reply/reply/agent-runner-execution-cli-block-replies.test.ts src/auto-reply/reply/agent-runner-cli-dispatch.test.ts src/auto-reply/reply/reply-delivery.test.ts src/auto-reply/reply/agent-runner-payloads.test.ts src/auto-reply/reply/reply-turn-admission.test.ts` — passed, 10 files / 216 tests.
+- `node extensions/browser/scripts/build-copilot-runtime.mjs && git diff --exit-code -- extensions/browser/chrome-extension/modules/copilot-runtime.js` — passed; generated runtime is reproducible from this branch.
 - `node scripts/run-tsgo.mjs -p tsconfig.core.json --incremental --tsBuildInfoFile .artifacts/tsgo-cache/core.tsbuildinfo && node scripts/run-tsgo.mjs -p test/tsconfig/tsconfig.core.test.json --incremental --tsBuildInfoFile .artifacts/tsgo-cache/core-test.tsbuildinfo` — passed.
 
 ## Complete patch-id ledger vs 2026.7.2
