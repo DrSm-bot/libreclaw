@@ -68,7 +68,9 @@ export async function dashboardCommand(
     runtime,
     operation: "open the dashboard",
     yes: options.yes,
-    probeUrl: initialTarget.links.wsUrl,
+    // Let the daemon status probe derive the local Gateway URL from config/service state.
+    // Passing the dashboard URL as an override skips local TLS fingerprint loading, which
+    // makes self-signed HTTPS Gateways look unavailable even when the Gateway is healthy.
     readyWhenReachable: true,
   });
   if (!readiness.ready) {
