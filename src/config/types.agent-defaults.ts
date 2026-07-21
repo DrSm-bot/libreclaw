@@ -1,5 +1,6 @@
 // Defines agent default configuration types shared by runtime schemas.
 import type { SilentReplyPolicyShape } from "../shared/silent-reply-policy.js";
+import type { SystemPromptSectionId } from "./system-prompt-sections.js";
 import type {
   AgentModelConfig,
   AgentToolModelConfig,
@@ -30,9 +31,26 @@ export type Gpt5PromptOverlayConfig = {
   personality?: "friendly" | "on" | "off";
 };
 
+export type OpenClawPromptOverlayConfig = {
+  /** Enable OpenClaw-owned Prompt Studio additions. Defaults to true when content is present. */
+  enabled?: boolean;
+  /** Safety wording style for the generated Safety section. */
+  safetyStyle?: "openclaw" | "libreclaw";
+  /** Operator-authored stable custom instructions inserted before the prompt cache boundary. */
+  customInstructions?: string;
+  /** Text prepended to the fully generated system prompt preview/runtime prompt. */
+  prepend?: string;
+  /** Text appended to the fully generated system prompt preview/runtime prompt. */
+  append?: string;
+  /** Generated system prompt sections to remove from the final prompt. */
+  removeSections?: SystemPromptSectionId[];
+};
+
 export type PromptOverlaysConfig = {
   /** Shared GPT-5-family prompt overlay used across providers. */
   gpt5?: Gpt5PromptOverlayConfig;
+  /** OpenClaw-owned Prompt Studio v2 additions. */
+  openclaw?: OpenClawPromptOverlayConfig;
 };
 
 export type AgentModelEntryConfig = {

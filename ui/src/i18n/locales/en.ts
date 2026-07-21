@@ -429,6 +429,47 @@ export const en: TranslationMap = {
     eventLogSubtitle: "Latest gateway events.",
     noEvents: "No events yet.",
   },
+  promptStudio: {
+    intro:
+      "Prompt Studio adds your instructions as a safe overlay on top of the generated OpenClaw system prompt. It does not replace safety, tools, workspace context, or provider-specific guidance.",
+    actions: {
+      apply: "Apply & restart",
+      applying: "Applying…",
+    },
+    status: {
+      ready: "Ready",
+      saving: "Saving…",
+      saved: "Saved",
+      error: "Save failed",
+      conflict: "Reload required",
+    },
+    editor: {
+      title: "Custom Instructions",
+      description:
+        "These instructions are inserted as a ## Custom Instructions section before the prompt cache boundary.",
+      status: "Status",
+      enableTitle: "Enable Prompt Studio overlay",
+      enableDescription:
+        "Turn this off to temporarily disable the custom instructions without deleting them.",
+      customInstructionsTitle: "Instructions",
+      customInstructionsDescription:
+        "Write stable preferences, house style, policies, or operating rules. Keep secrets out; prompt text can appear in diagnostics and previews.",
+      placeholder:
+        "Example: Be concise, cite files when making code claims, and preserve LibreClaw-specific privacy rules.",
+      configPath: "Config path",
+      configPathDescription: "The editor writes only this safe overlay field in openclaw.json.",
+      resetTitle: "Clear instructions",
+      resetDescription: "Remove the custom instructions field from the draft config.",
+      resetButton: "Clear text",
+    },
+    preview: {
+      title: "Prompt preview",
+      description:
+        "This is the exact section Prompt Studio contributes. Full prompt preview stays separate because it may expose private workspace context.",
+      sectionTitle: "Injected section",
+      empty: "No custom instruction section will be injected.",
+    },
+  },
   quickSettings: {
     security: {
       browserEnabled: "Browser enabled",
@@ -516,6 +557,7 @@ export const en: TranslationMap = {
     mcp: "MCP",
     infrastructure: "Infrastructure",
     aiAgents: "AI & Agents",
+    promptStudio: "Prompt Studio",
     debug: "Debug",
     logs: "Logs",
     dreams: "Dreaming",
@@ -544,6 +586,7 @@ export const en: TranslationMap = {
     mcp: "MCP servers, auth, tools, and diagnostics.",
     infrastructure: "Gateway, web, browser, and media settings.",
     aiAgents: "Agents, models, skills, tools, memory, session.",
+    promptStudio: "Customize the operator-owned system prompt overlay.",
     debug: "Snapshots, events, RPC.",
     logs: "Live gateway logs.",
     dreams: "Memory dreaming, consolidation, and reflection.",

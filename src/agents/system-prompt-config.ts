@@ -9,6 +9,12 @@ import { buildTtsSystemPromptHint } from "../tts/tts.js";
 import { resolveAgentConfig } from "./agent-scope.js";
 import { buildModelAliasLines } from "./model-alias-lines.js";
 import { resolveOwnerDisplaySetting } from "./owner-display.js";
+import {
+  applySystemPromptStudioFinalTransform,
+  mergeSystemPromptContributions,
+  resolveSystemPromptStudioContribution,
+  resolveSystemPromptStudioRemoveSections,
+} from "./system-prompt-studio.js";
 import { buildAgentSystemPrompt } from "./system-prompt.js";
 import { resolveEffectiveToolFsWorkspaceOnly } from "./tool-fs-policy.js";
 
@@ -58,8 +64,18 @@ export function resolveAgentSystemPromptConfig(params: {
 export function buildConfiguredAgentSystemPrompt(params: ConfiguredAgentSystemPromptParams) {
   const { config, agentId, ...renderParams } = params;
   const configParams = config ? resolveAgentSystemPromptConfig({ config, agentId }) : {};
-  return buildAgentSystemPrompt({
+  const promptContribution = mergeSystemPromptContributions({
+    base: renderParams.promptContribution,
+    studio: resolveSystemPromptStudioContribution(
+      config?.agents?.defaults?.promptOverlays?.openclaw,
+    ),
+  });
+  const openclawPromptStudioConfig = config?.agents?.defaults?.promptOverlays?.openclaw;
+  const prompt = buildAgentSystemPrompt({
     ...renderParams,
     ...configParams,
+    promptContribution,
+    promptStudioRemoveSections: resolveSystemPromptStudioRemoveSections(openclawPromptStudioConfig),
   });
+  return applySystemPromptStudioFinalTransform(prompt, openclawPromptStudioConfig);
 }

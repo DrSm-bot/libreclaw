@@ -6,6 +6,7 @@ import fs from "node:fs/promises";
 import type { IncomingMessage } from "node:http";
 import os from "node:os";
 import path from "node:path";
+import { Readable } from "node:stream";
 import { describe, expect, it, vi } from "vitest";
 import { resolveStateDir } from "../config/paths.js";
 import {
@@ -119,6 +120,30 @@ describe("handleControlUiHttpRequest", () => {
       },
     );
     return { res, end, handled };
+  }
+
+  async function runPromptPreviewRequest(params: {
+    body?: Record<string, unknown>;
+    method?: "GET" | "POST";
+    basePath?: string;
+  }) {
+    const { res, end, setHeader } = makeMockHttpResponse();
+    const url = params.basePath
+      ? `${params.basePath}/api/system-prompt/preview`
+      : "/api/system-prompt/preview";
+    const requestBody = JSON.stringify(params.body ?? {});
+    const req = Object.assign(Readable.from([requestBody]), {
+      url,
+      method: params.method ?? "POST",
+      headers: {},
+      socket: { remoteAddress: "127.0.0.1" },
+    }) as IncomingMessage;
+    const handled = await handleControlUiHttpRequest(req, res, {
+      ...(params.basePath ? { basePath: params.basePath } : {}),
+      config: { agents: { defaults: { workspace: "/tmp/openclaw-preview" } } },
+      root: { kind: "missing" },
+    });
+    return { res, end, setHeader, handled };
   }
 
   async function runAvatarRequest(params: {
@@ -337,6 +362,37 @@ describe("handleControlUiHttpRequest", () => {
       await fs.rm(tempHome, { recursive: true, force: true });
     }
   }
+
+  it("renders Prompt Studio full system prompt previews", async () => {
+    const { handled, res, end } = await runPromptPreviewRequest({
+      body: {
+        promptOverlay: {
+          prepend: "PREVIEW PREPEND",
+          append: "PREVIEW APPEND",
+          safetyStyle: "libreclaw",
+          removeSections: ["memory_recall"],
+        },
+      },
+    });
+
+    expect(handled).toBe(true);
+    expect(res.statusCode).toBe(200);
+    const payload = responseJson(end) as { ok?: boolean; prompt?: string };
+    expect(payload.ok).toBe(true);
+    expect(payload.prompt).toContain("PREVIEW PREPEND");
+    expect(payload.prompt).toContain("Pursue no goals that conflict with your human's interests");
+    expect(payload.prompt).not.toContain("## Memory Recall");
+    expect(payload.prompt).toContain("PREVIEW APPEND");
+  });
+
+  it("rejects non-POST Prompt Studio preview requests", async () => {
+    const { handled, res, end, setHeader } = await runPromptPreviewRequest({ method: "GET" });
+
+    expect(handled).toBe(true);
+    expect(res.statusCode).toBe(405);
+    expect(setHeader).toHaveBeenCalledWith("Allow", "POST");
+    expect(responseBody(end)).toBe("Method Not Allowed");
+  });
 
   it("sets security headers for Control UI responses", async () => {
     await withControlUiRoot({

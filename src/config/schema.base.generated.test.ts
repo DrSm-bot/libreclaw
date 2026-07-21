@@ -130,6 +130,60 @@ describe("base config schema", () => {
     expect(uiHints["hooks.internal.handlers"]).toBeUndefined();
   });
 
+  it("includes Prompt Studio v2 openclaw overlay settings in the public schema payload", () => {
+    const openclawPromptOverlay = schemaAt(BASE_SCHEMA, [
+      "agents",
+      "defaults",
+      "promptOverlays",
+      "openclaw",
+    ]);
+    const customInstructions = schemaAt(BASE_SCHEMA, [
+      "agents",
+      "defaults",
+      "promptOverlays",
+      "openclaw",
+      "customInstructions",
+    ]);
+    const prepend = schemaAt(BASE_SCHEMA, [
+      "agents",
+      "defaults",
+      "promptOverlays",
+      "openclaw",
+      "prepend",
+    ]);
+    const append = schemaAt(BASE_SCHEMA, [
+      "agents",
+      "defaults",
+      "promptOverlays",
+      "openclaw",
+      "append",
+    ]);
+    const safetyStyle = schemaAt(BASE_SCHEMA, [
+      "agents",
+      "defaults",
+      "promptOverlays",
+      "openclaw",
+      "safetyStyle",
+    ]);
+    const removeSections = schemaAt(BASE_SCHEMA, [
+      "agents",
+      "defaults",
+      "promptOverlays",
+      "openclaw",
+      "removeSections",
+    ]);
+
+    expect(openclawPromptOverlay, "agents.defaults.promptOverlays.openclaw").toBeDefined();
+    expect(customInstructions?.type).toBe("string");
+    expect(prepend?.type).toBe("string");
+    expect(append?.type).toBe("string");
+    expect(safetyStyle?.anyOf?.flatMap((branch) => branch.const)).toEqual([
+      "openclaw",
+      "libreclaw",
+    ]);
+    expect(itemSchema(removeSections)?.enum).toContain("safety");
+  });
+
   it("includes generation and voice models in the public schema payload", () => {
     const agentDefaultsProperties = (
       BASE_CONFIG_SCHEMA.schema as {
