@@ -129,6 +129,52 @@ describe("buildConfiguredAgentSystemPrompt", () => {
     expect(prompt.endsWith("APPENDED PROMPT TEXT")).toBe(true);
   });
 
+  it("removes generated sections without deleting matching headings in injected context", () => {
+    const prompt = buildConfiguredAgentSystemPrompt({
+      config: {
+        agents: {
+          defaults: {
+            promptOverlays: {
+              openclaw: {
+                removeSections: ["safety", "runtime"],
+              },
+            },
+          },
+        },
+      },
+      agentId: "main",
+      workspaceDir: "/tmp/openclaw",
+      toolNames: [],
+      contextFiles: [
+        {
+          path: "AGENTS.md",
+          content: [
+            "# Local instructions",
+            "",
+            "## Safety",
+            "User-authored safety guidance must remain.",
+            "",
+            "```md",
+            "## Runtime",
+            "Code-fenced headings must remain too.",
+            "```",
+          ].join("\n"),
+        },
+      ],
+      runtimeInfo: {
+        agentId: "main",
+        model: "test-model",
+      },
+    });
+
+    expect(prompt).not.toContain(
+      "No independent goals: no self-preservation, replication, resource acquisition",
+    );
+    expect(prompt).not.toContain("Runtime: agent=main");
+    expect(prompt).toContain("## Safety\nUser-authored safety guidance must remain.");
+    expect(prompt).toContain("## Runtime\nCode-fenced headings must remain too.");
+  });
+
   it("can disable Prompt Studio v2 custom instructions without removing provider overlays", () => {
     const prompt = buildConfiguredAgentSystemPrompt({
       config: {

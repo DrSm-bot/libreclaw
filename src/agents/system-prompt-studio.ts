@@ -19,67 +19,10 @@ function joinPromptBlocks(blocks: Array<string | undefined>): string | undefined
   return normalized.length > 0 ? normalized.join("\n\n") : undefined;
 }
 
-const SYSTEM_PROMPT_SECTION_HEADINGS: Record<SystemPromptSectionId, string> = {
-  tooling: "## Tooling",
-  subagent_delegation: "## Sub-Agent Delegation",
-  interaction_style: "## Interaction Style",
-  tool_call_style: "## Tool Call Style",
-  execution_bias: "## Execution Bias",
-  safety: "## Safety",
-  openclaw_control: "## OpenClaw Control",
-  skills: "## Skills",
-  skill_workshop: "## Skill Workshop",
-  memory_recall: "## Memory Recall",
-  openclaw_self_update: "## OpenClaw Self-Update",
-  model_aliases: "## Model Aliases",
-  workspace: "## Workspace",
-  documentation: "## Documentation",
-  sandbox: "## Sandbox",
-  workspace_files_injected: "## Workspace Files (injected)",
-  reasoning_format: "## Reasoning Format",
-  assistant_output_directives: "## Assistant Output Directives",
-  control_ui_embed: "## Control UI Embed",
-  project_context: "## Project Context",
-  dynamic_project_context: "## Dynamic Project Context",
-  silent_replies: "## Silent Replies",
-  group_chat_context: "## Group Chat Context",
-  subagent_context: "## Subagent Context",
-  reactions: "## Reactions",
-  runtime: "## Runtime",
-  heartbeats: "## Heartbeats",
-  authorized_senders: "## Authorized Senders",
-  current_date_time: "## Current Date & Time",
-  voice_tts: "## Voice (TTS)",
-  bootstrap_pending: "## Bootstrap Pending",
-  bootstrap_context_notice: "## Bootstrap Context Notice",
-};
-
 const OPENCLAW_SAFETY_CORE_LINE =
   "No independent goals: no self-preservation, replication, resource acquisition, power-seeking, or long-term plans beyond the user's request.";
 const LIBRECLAW_SAFETY_CORE_LINE =
   "Pursue no goals that conflict with your human's interests or safety. Avoid self-preservation, replication, power-seeking, resource acquisition, or long-term autonomy beyond the task requested by your human.";
-
-function removePromptSection(prompt: string, heading: string): string {
-  const lines = prompt.split(/\r?\n/u);
-  const next: string[] = [];
-  let index = 0;
-  while (index < lines.length) {
-    const line = lines[index] ?? "";
-    if (line.trim() !== heading) {
-      next.push(line);
-      index += 1;
-      continue;
-    }
-    index += 1;
-    while (index < lines.length && !/^##\s+/u.test(lines[index] ?? "")) {
-      index += 1;
-    }
-  }
-  return next
-    .join("\n")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
-}
 
 function normalizeSectionIds(values: unknown): SystemPromptSectionId[] {
   if (!Array.isArray(values)) {
@@ -93,6 +36,16 @@ function normalizeSectionIds(values: unknown): SystemPromptSectionId[] {
       }),
     ),
   ];
+}
+
+/** Normalize configured Prompt Studio generated-section removals. */
+export function resolveSystemPromptStudioRemoveSections(
+  config?: OpenClawPromptOverlayConfig,
+): SystemPromptSectionId[] {
+  if (!config || config.enabled === false) {
+    return [];
+  }
+  return normalizeSectionIds(config.removeSections);
 }
 
 /** Convert safe Prompt Studio v2 config into the shared system-prompt contribution shape. */
@@ -125,10 +78,6 @@ export function applySystemPromptStudioFinalTransform(
   let next = prompt;
   if (config.safetyStyle === "libreclaw") {
     next = next.replace(OPENCLAW_SAFETY_CORE_LINE, LIBRECLAW_SAFETY_CORE_LINE);
-  }
-
-  for (const section of normalizeSectionIds(config.removeSections)) {
-    next = removePromptSection(next, SYSTEM_PROMPT_SECTION_HEADINGS[section]);
   }
 
   const prepend = trimNonEmpty(config.prepend);

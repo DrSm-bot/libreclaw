@@ -13,6 +13,7 @@ import {
   applySystemPromptStudioFinalTransform,
   mergeSystemPromptContributions,
   resolveSystemPromptStudioContribution,
+  resolveSystemPromptStudioRemoveSections,
 } from "./system-prompt-studio.js";
 import { buildAgentSystemPrompt } from "./system-prompt.js";
 import { resolveEffectiveToolFsWorkspaceOnly } from "./tool-fs-policy.js";
@@ -74,6 +75,7 @@ export function buildConfiguredAgentSystemPrompt(params: ConfiguredAgentSystemPr
     ...renderParams,
     ...configParams,
     promptContribution,
+    promptStudioRemoveSections: resolveSystemPromptStudioRemoveSections(openclawPromptStudioConfig),
   });
   return applySystemPromptStudioFinalTransform(prompt, openclawPromptStudioConfig);
 }
