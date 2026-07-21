@@ -1296,7 +1296,7 @@ export function buildAgentSystemPrompt(params: {
           userTimezone,
         }),
       ),
-      ...bootstrapSystemPromptSections.filter((line, index, all) => {
+      ...bootstrapSystemPromptSections.filter((_, index, all) => {
         const heading = all.findLast(
           (candidate, candidateIndex) => candidateIndex <= index && candidate.startsWith("## "),
         );
