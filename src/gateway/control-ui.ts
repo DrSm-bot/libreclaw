@@ -10,6 +10,8 @@ import {
   resolveTimestampMsToIsoString,
 } from "@openclaw/normalization-core/number-coercion";
 import { resolveAgentAvatar, resolvePublicAgentAvatarSource } from "../agents/identity-avatar.js";
+import { buildConfiguredAgentSystemPrompt } from "../agents/system-prompt-config.js";
+import type { OpenClawPromptOverlayConfig } from "../config/types.agent-defaults.js";
 import type { OpenClawConfig } from "../config/types.openclaw.js";
 import { matchRootFileOpenFailure, openRootFileSync } from "../infra/boundary-file-read.js";
 import {
@@ -18,6 +20,7 @@ import {
 } from "../infra/control-ui-assets.js";
 import { listDevicePairing, verifyDeviceToken } from "../infra/device-pairing.js";
 import { openLocalFileSafely, FsSafeError, readSecureFile } from "../infra/fs-safe.js";
+import { readJsonBodyWithLimit } from "../infra/http-body.js";
 import { safeFileURLToPath } from "../infra/local-file-access.js";
 import { verifyPairingToken } from "../infra/pairing-token.js";
 import { isWithinDir } from "../infra/path-safety.js";
@@ -958,6 +961,37 @@ function matchesControlUiBootstrapConfigPath(pathname: string, basePath: string)
   return basePath === "" && pathname === CONTROL_UI_DEFAULT_NAMESPACE_BOOTSTRAP_CONFIG_PATH;
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value && typeof value === "object" && !Array.isArray(value));
+}
+
+function readPromptStudioOverlayPayload(
+  payload: Record<string, unknown>,
+): OpenClawPromptOverlayConfig {
+  const candidate = isRecord(payload.promptOverlay)
+    ? payload.promptOverlay
+    : isRecord(payload.openclaw)
+      ? payload.openclaw
+      : isRecord(payload.systemPrompt)
+        ? payload.systemPrompt
+        : {};
+  return candidate as OpenClawPromptOverlayConfig;
+}
+
+function cloneConfigForPromptStudioPreview(
+  config: OpenClawConfig | undefined,
+  openclaw: OpenClawPromptOverlayConfig,
+): OpenClawConfig {
+  const next = structuredClone((config ?? {}) as OpenClawConfig) as OpenClawConfig & {
+    agents?: { defaults?: { promptOverlays?: { openclaw?: OpenClawPromptOverlayConfig } } };
+  };
+  next.agents ??= {};
+  next.agents.defaults ??= {};
+  next.agents.defaults.promptOverlays ??= {};
+  next.agents.defaults.promptOverlays.openclaw = openclaw;
+  return next;
+}
+
 export async function handleControlUiHttpRequest(
   req: IncomingMessage,
   res: ServerResponse,
@@ -970,6 +1004,52 @@ export async function handleControlUiHttpRequest(
   const url = new URL(urlRaw, "http://localhost");
   const basePath = normalizeControlUiBasePath(opts?.basePath);
   const pathname = url.pathname;
+  const previewPath = basePath
+    ? `${basePath}/api/system-prompt/preview`
+    : "/api/system-prompt/preview";
+
+  if (pathname === previewPath) {
+    applyControlUiSecurityHeaders(res);
+    if (req.method !== "POST") {
+      res.statusCode = 405;
+      res.setHeader("Allow", "POST");
+      res.setHeader("Content-Type", "text/plain; charset=utf-8");
+      res.end("Method Not Allowed");
+      return true;
+    }
+    if (
+      !(await authorizeControlUiReadRequest(req, res, {
+        auth: opts?.auth,
+        trustedProxies: opts?.trustedProxies,
+        allowRealIpFallback: opts?.allowRealIpFallback,
+        rateLimiter: opts?.rateLimiter,
+        requiredOperatorMethod: "config.get",
+      }))
+    ) {
+      return true;
+    }
+    const body = await readJsonBodyWithLimit(req, { maxBytes: 128 * 1024 });
+    if (!body.ok) {
+      sendJson(res, 400, { ok: false, error: body.error });
+      return true;
+    }
+    try {
+      const payload = isRecord(body.value) ? body.value : {};
+      const promptOverlay = readPromptStudioOverlayPayload(payload);
+      const previewConfig = cloneConfigForPromptStudioPreview(opts?.config, promptOverlay);
+      const workspaceDir = previewConfig.agents?.defaults?.workspace?.trim() || process.cwd();
+      const prompt = buildConfiguredAgentSystemPrompt({
+        config: previewConfig,
+        agentId: opts?.agentId,
+        workspaceDir,
+      });
+      sendJson(res, 200, { ok: true, prompt, warnings: [] });
+    } catch (error) {
+      sendJson(res, 500, { ok: false, error: String(error) });
+    }
+    return true;
+  }
+
   // The embedded terminal ships ghostty-web (WASM); relax the index CSP only
   // for an explicitly enabled terminal so the default policy stays strict.
   const terminalEnabled =

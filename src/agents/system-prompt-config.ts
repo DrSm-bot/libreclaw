@@ -10,6 +10,7 @@ import { resolveAgentConfig } from "./agent-scope.js";
 import { buildModelAliasLines } from "./model-alias-lines.js";
 import { resolveOwnerDisplaySetting } from "./owner-display.js";
 import {
+  applySystemPromptStudioFinalTransform,
   mergeSystemPromptContributions,
   resolveSystemPromptStudioContribution,
 } from "./system-prompt-studio.js";
@@ -68,9 +69,11 @@ export function buildConfiguredAgentSystemPrompt(params: ConfiguredAgentSystemPr
       config?.agents?.defaults?.promptOverlays?.openclaw,
     ),
   });
-  return buildAgentSystemPrompt({
+  const openclawPromptStudioConfig = config?.agents?.defaults?.promptOverlays?.openclaw;
+  const prompt = buildAgentSystemPrompt({
     ...renderParams,
     ...configParams,
     promptContribution,
   });
+  return applySystemPromptStudioFinalTransform(prompt, openclawPromptStudioConfig);
 }

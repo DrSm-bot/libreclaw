@@ -1,6 +1,7 @@
 // Defines Zod schema fragments for agent default configuration.
 import { z } from "zod";
 import { isValidNonNegativeByteSizeString } from "./byte-size.js";
+import { SYSTEM_PROMPT_SECTION_IDS } from "./system-prompt-sections.js";
 import {
   HeartbeatSchema,
   AgentSandboxSchema,
@@ -42,6 +43,8 @@ const EmbeddedAgentConfigSchema = z
   })
   .strict();
 
+const SystemPromptSectionIdSchema = z.enum(SYSTEM_PROMPT_SECTION_IDS);
+
 export const SilentReplyPolicyConfigSchema = z
   .object({
     group: SilentReplyPolicySchema.optional(),
@@ -82,7 +85,11 @@ export const AgentDefaultsSchema = z
         openclaw: z
           .object({
             enabled: z.boolean().optional(),
+            safetyStyle: z.union([z.literal("openclaw"), z.literal("libreclaw")]).optional(),
             customInstructions: z.string().optional(),
+            prepend: z.string().optional(),
+            append: z.string().optional(),
+            removeSections: z.array(SystemPromptSectionIdSchema).optional(),
           })
           .strict()
           .optional(),

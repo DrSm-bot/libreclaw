@@ -100,6 +100,35 @@ describe("buildConfiguredAgentSystemPrompt", () => {
     expect(prompt).toContain("## Safety");
   });
 
+  it("applies Prompt Studio v2 full-prompt prepend, append, safety style, and section removal", () => {
+    const prompt = buildConfiguredAgentSystemPrompt({
+      config: {
+        agents: {
+          defaults: {
+            promptOverlays: {
+              openclaw: {
+                safetyStyle: "libreclaw",
+                prepend: "PREPENDED PROMPT TEXT",
+                append: "APPENDED PROMPT TEXT",
+                removeSections: ["memory_recall"],
+              },
+            },
+          },
+        },
+      },
+      agentId: "main",
+      workspaceDir: "/tmp/openclaw",
+      toolNames: ["memory_search"],
+    });
+
+    expect(prompt.startsWith("PREPENDED PROMPT TEXT\n\nYou are a personal assistant")).toBe(true);
+    expect(prompt).toContain(
+      "Pursue no goals that conflict with your human's interests or safety.",
+    );
+    expect(prompt).not.toContain("## Memory Recall");
+    expect(prompt.endsWith("APPENDED PROMPT TEXT")).toBe(true);
+  });
+
   it("can disable Prompt Studio v2 custom instructions without removing provider overlays", () => {
     const prompt = buildConfiguredAgentSystemPrompt({
       config: {

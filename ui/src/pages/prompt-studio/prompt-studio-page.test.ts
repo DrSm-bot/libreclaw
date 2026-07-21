@@ -17,6 +17,7 @@ type RuntimeConfigState = {
     sourceConfig: Record<string, unknown>;
   } | null;
   configForm: Record<string, unknown> | null;
+  configFormDirty: boolean;
   lastError: string | null;
 };
 
@@ -28,6 +29,7 @@ function createRuntimeConfig(sourceConfig: Record<string, unknown>) {
     configApplying: false,
     configSnapshot: { hash: "config-hash", sourceConfig },
     configForm: sourceConfig,
+    configFormDirty: false,
     lastError: null,
   };
   const listeners = new Set<(state: RuntimeConfigState) => void>();
@@ -82,11 +84,22 @@ function openclawConfig(customInstructions = "Keep replies crisp.", enabled = tr
 describe("PromptStudioPage", () => {
   beforeEach(async () => {
     await i18n.setLocale("en");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        async () =>
+          new Response(JSON.stringify({ ok: true, prompt: "FULL SYSTEM PROMPT" }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          }),
+      ),
+    );
   });
 
   afterEach(() => {
     document.body.replaceChildren();
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
   });
 
   it("renders the custom instructions editor and safe section preview", async () => {
@@ -96,11 +109,16 @@ describe("PromptStudioPage", () => {
     expect(page.querySelector<HTMLTextAreaElement>(".prompt-studio-editor")?.value).toBe(
       "Keep replies crisp.",
     );
-    expect(page.textContent).toContain(
-      "agents.defaults.promptOverlays.openclaw.customInstructions",
+    expect(page.textContent).toContain("agents.defaults.promptOverlays.openclaw");
+    await vi.waitFor(() =>
+      expect(page.querySelector(".prompt-studio-preview")?.textContent).toBe("FULL SYSTEM PROMPT"),
     );
-    expect(page.querySelector(".prompt-studio-preview")?.textContent).toBe(
-      "## Custom Instructions\nKeep replies crisp.",
+    expect(fetch).toHaveBeenCalledWith(
+      "/api/system-prompt/preview",
+      expect.objectContaining({
+        method: "POST",
+        body: expect.stringContaining("Keep replies crisp."),
+      }),
     );
     expect(page.querySelector<HTMLInputElement>(".prompt-studio-toggle")?.checked).toBe(true);
   });
@@ -118,6 +136,44 @@ describe("PromptStudioPage", () => {
     expect(runtimeConfig.patchForm).toHaveBeenCalledWith(
       ["agents", "defaults", "promptOverlays", "openclaw", "customInstructions"],
       "Prefer source-backed answers.",
+    );
+  });
+
+  it("edits prepend, append, safety style, and removed sections", async () => {
+    const { page, runtimeConfig } = await mountPage(openclawConfig());
+
+    const prepend = page.querySelector<HTMLTextAreaElement>(".prompt-studio-prepend");
+    prepend!.value = "Before everything.";
+    prepend!.dispatchEvent(new Event("input", { bubbles: true, composed: true }));
+    expect(runtimeConfig.patchForm).toHaveBeenCalledWith(
+      ["agents", "defaults", "promptOverlays", "openclaw", "prepend"],
+      "Before everything.",
+    );
+
+    const append = page.querySelector<HTMLTextAreaElement>(".prompt-studio-append");
+    append!.value = "After everything.";
+    append!.dispatchEvent(new Event("input", { bubbles: true, composed: true }));
+    expect(runtimeConfig.patchForm).toHaveBeenCalledWith(
+      ["agents", "defaults", "promptOverlays", "openclaw", "append"],
+      "After everything.",
+    );
+
+    const safety = page.querySelector<HTMLSelectElement>(".prompt-studio-safety-style");
+    safety!.value = "libreclaw";
+    safety!.dispatchEvent(new Event("change", { bubbles: true, composed: true }));
+    expect(runtimeConfig.patchForm).toHaveBeenCalledWith(
+      ["agents", "defaults", "promptOverlays", "openclaw", "safetyStyle"],
+      "libreclaw",
+    );
+
+    const safetyRemoval = [
+      ...page.querySelectorAll<HTMLInputElement>(".prompt-studio-section-check input"),
+    ].find((input) => input.closest("label")?.textContent?.includes("Safety"));
+    safetyRemoval!.checked = true;
+    safetyRemoval!.dispatchEvent(new Event("change", { bubbles: true, composed: true }));
+    expect(runtimeConfig.patchForm).toHaveBeenCalledWith(
+      ["agents", "defaults", "promptOverlays", "openclaw", "removeSections"],
+      ["safety"],
     );
   });
 

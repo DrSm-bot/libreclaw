@@ -2420,7 +2420,7 @@
 /* Prompt Studio v2: stable-branch settings surface. */
 .prompt-studio-page {
   width: 100%;
-  max-width: 900px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: var(--space-3) var(--space-4) var(--space-8);
   display: flex;
@@ -2511,18 +2511,27 @@
 
 .prompt-studio-row--stacked .prompt-studio-row__control,
 .prompt-studio-editor,
-.prompt-studio-preview {
+.prompt-studio-prepend,
+.prompt-studio-append,
+.prompt-studio-preview,
+.prompt-studio-section-grid {
   width: 100%;
 }
 
 .prompt-studio-editor {
-  min-height: 220px;
+  min-height: 180px;
+  resize: vertical;
+}
+
+.prompt-studio-prepend,
+.prompt-studio-append {
+  min-height: 130px;
   resize: vertical;
 }
 
 .prompt-studio-preview {
   box-sizing: border-box;
-  max-height: 320px;
+  max-height: 620px;
   overflow: auto;
   margin: 0;
   padding: var(--space-3);
@@ -2531,6 +2540,28 @@
   background: color-mix(in srgb, var(--bg) 90%, var(--card));
   color: var(--text);
   white-space: pre-wrap;
+}
+
+.prompt-studio-section-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-2);
+}
+
+.prompt-studio-section-check {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--muted-strong);
+  background: color-mix(in srgb, var(--card) 86%, transparent);
+}
+
+.prompt-studio-section-check.active {
+  border-color: var(--warn);
+  color: var(--text-strong);
 }
 
 .prompt-studio-toggle-control {
@@ -2555,10 +2586,18 @@
   background: currentColor;
 }
 
-.prompt-studio-status--ok { color: var(--ok); }
-.prompt-studio-status--warn { color: var(--warn); }
-.prompt-studio-status--danger { color: var(--danger); }
-.prompt-studio-status--muted { color: var(--muted); }
+.prompt-studio-status--ok {
+  color: var(--ok);
+}
+.prompt-studio-status--warn {
+  color: var(--warn);
+}
+.prompt-studio-status--danger {
+  color: var(--danger);
+}
+.prompt-studio-status--muted {
+  color: var(--muted);
+}
 
 @media (max-width: 720px) {
   .prompt-studio-section__header,
